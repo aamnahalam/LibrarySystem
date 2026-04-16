@@ -1,25 +1,31 @@
 #include "Resource.h"
 #include <iostream>
-using namespace std;
 
-Resource::Resource(int id, string title) {
-    this->id = id;
+Resource::Resource(int id, string title, string author, string category)
+{
+    resourceID = id;
     this->title = title;
-    this->available = true;
+    this->author = author;
+    this->category = category;
+
+    isAvailable = true;
+    rating = 0;
+    digitalAvailable = false;
+    price = 0;
+    borrowDuration = 0;
 }
 
-void Resource::borrow() {
-    available = false;
+void Resource::updateAvailability(bool status)
+{
+    isAvailable = status;
 }
 
-void Resource::giveBack() {
-    available = true;
+void Resource::addRating(int value)
+{
+    rating = (rating + value) / 2;
 }
 
-bool Resource::isAvailable() {
-    return available;
-}
-
-void Resource::display() {
-    cout << "Resource: " << title << endl;
+bool Resource::operator>(Resource& other)
+{
+    return rating > other.rating;
 }
