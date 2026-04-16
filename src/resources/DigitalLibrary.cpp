@@ -1,20 +1,32 @@
 #include "DigitalLibrary.h"
 #include <iostream>
-using namespace std;
 
-void DigitalLibrary::addResource(Resource* r) {
-    resources.push_back(r);
+DigitalLibrary::DigitalLibrary()
+{
+    accessAccount = 0;
+    downloadLimit = 5;
 }
 
-void DigitalLibrary::showAll() {
-    for (auto r : resources) {
-        r->display();
+void DigitalLibrary::viewOnline(int resourceID)
+{
+    cout << "Viewing resource online with ID: " << resourceID << endl;
+    accessAccount++;
+}
+
+void DigitalLibrary::downloadPDF(int resourceID)
+{
+    if(downloadLimit > 0)
+    {
+        cout << "Downloading PDF of resource ID: " << resourceID << endl;
+        downloadLimit--;
+    }
+    else
+    {
+        cout << "Download limit reached.\n";
     }
 }
 
-Resource* DigitalLibrary::findById(int id) {
-    for (auto r : resources) {
-        // simple check if needed later
-    }
-    return nullptr;
+void DigitalLibrary::trackAccessCount()
+{
+    cout << "Total accesses: " << accessAccount << endl;
 }

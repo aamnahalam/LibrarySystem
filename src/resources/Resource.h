@@ -4,19 +4,31 @@
 #include <string>
 using namespace std;
 
-class Resource {
+class Resource
+{
 protected:
-    int id;
+    int resourceID;
     string title;
-    bool available;
+    string author;
+    string category;
+    bool isAvailable;
+    double rating;
+    bool digitalAvailable;
+    double price;
+    int borrowDuration;
 
 public:
-    Resource(int id, string title);
+    Resource(int id, string title, string author, string category);
 
-    virtual void display();
-    bool isAvailable();
-    void borrow();
-    void giveBack();
+    virtual void displayDetails() = 0;
+    void updateAvailability(bool status);
+
+    virtual int getBorrowLimit() = 0;
+    virtual double getFineRate() = 0;
+
+    void addRating(int value);
+
+    bool operator>(Resource& other);
 };
 
 #endif

@@ -1,18 +1,22 @@
-#ifndef DIGITAL_LIBRARY_H
-#define DIGITAL_LIBRARY_H
+#ifndef DIGITALLIBRARY_H
+#define DIGITALLIBRARY_H
 
 #include <vector>
 #include "Resource.h"
-using namespace std;
 
-class DigitalLibrary {
+class DigitalLibrary
+{
 private:
+    int accessAccount;
+    int downloadLimit;
     vector<Resource*> resources;
 
 public:
-    void addResource(Resource* r);
-    void showAll();
-    Resource* findById(int id);
+    DigitalLibrary();
+
+    void viewOnline(int resourceID);
+    void downloadPDF(int resourceID);
+    void trackAccessCount();
 };
 
 #endif
