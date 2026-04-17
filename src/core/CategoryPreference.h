@@ -13,9 +13,10 @@ public:
     CategoryPreference(string category);
 
     void setCategory(string category);
-    string getCategory();
+    string getCategory() const;
 
-    void showPreference();
+    bool isValidCategory(string category);   // validation
+    void showPreference() const;
 };
 
 #endif

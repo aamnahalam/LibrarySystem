@@ -7,17 +7,38 @@ CategoryPreference::CategoryPreference() {
 }
 
 CategoryPreference::CategoryPreference(string category) {
-    this->category = category;
+    if (isValidCategory(category)) {
+        this->category = category;
+    } else {
+        this->category = "None";
+    }
 }
 
 void CategoryPreference::setCategory(string category) {
-    this->category = category;
+    if (isValidCategory(category)) {
+        this->category = category;
+    } else {
+        cout << "Invalid category. Setting to None." << endl;
+        this->category = "None";
+    }
 }
 
-string CategoryPreference::getCategory() {
+string CategoryPreference::getCategory() const {
     return category;
 }
 
-void CategoryPreference::showPreference() {
+// 🔥 simple validation logic
+bool CategoryPreference::isValidCategory(string category) {
+    if (category == "Fiction" ||
+        category == "Science" ||
+        category == "History" ||
+        category == "Technology" ||
+        category == "Other") {
+        return true;
+    }
+    return false;
+}
+
+void CategoryPreference::showPreference() const {
     cout << "Preferred Category: " << category << endl;
 }
