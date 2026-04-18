@@ -13,11 +13,11 @@ Person::Person(int id, string firstName, string lastName, string email, string p
 
 bool Person::login(string email, string password){
     if(this->email==email && this->password==password){
-        cout<< "Login Successfull." <<endl;
+        cout<< "Login Successfull. Welcome," <<endl;
         return true;
     } 
     else{
-        cout<< "Invalid Email Or Password." <<endl;
+        cout<< "Login Failed. Invalid Email Or Password." <<endl;
         return false;
     }
 }
