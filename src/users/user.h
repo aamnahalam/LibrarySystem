@@ -2,6 +2,8 @@
 #define USER_H
 
 #include "Person.h"
+#include<string>
+using namespace std;
 
 class User : public Person {
 private:
