@@ -1,7 +1,34 @@
+#include<iostream>
 #include "Person.h"
 
-Person::Person(int id, string firstName, string lastName) {
+Person::Person(int id, string firstName, string lastName, string email, string password) {
     this->id = id;
     this->firstName = firstName;
     this->lastName = lastName;
+    this->email=email;
+    this->password=password;
+}
+
+//Login Function
+
+bool Person::login(string email, string password){
+    if(this->email==email && this->password==password){
+        cout<< "Login Successfull." <<endl;
+        return true;
+    } 
+    else{
+        cout<< "Invalid Email Or Password." <<endl;
+        return false;
+    }
+}
+
+//Logout Function
+
+void Person::logout(){
+    cout<< "Logged Out Successfully." <<endl;
+}
+
+// Destructor
+Person::~Person(){
+    
 }

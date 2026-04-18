@@ -9,12 +9,18 @@ protected:
     int id;
     string firstName;
     string lastName;
+    string email;
+    string password;
+    
 
 public:
-    Person(int id, string firstName, string lastName);
+    Person(int id, string firstName, string lastName, string email, string password);
     
+    bool login(string email, string password);
+    void logout();
     virtual void displayInfo() = 0; 
     // pure virtual → makes it abstract class
+    virtual  ~Person();
 };
 
 #endif
