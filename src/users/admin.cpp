@@ -1,17 +1,22 @@
-#include "Admin.h"
+#include "admin.h"
 #include <iostream>
 using namespace std;
 
-Admin::Admin(int id, string firstName, string lastName)
-    : Person(id, firstName, lastName) {
+Admin::Admin(int id, string firstName, string lastName, string email,
+ string password, string level)
+    : Person(id, firstName, lastName,email,password) {
+        accessLevel=level;
 }
 
-void Admin::manageUsers() {
-}
+// void Admin::manageUsers() {
+// }
 
-void Admin::manageResources() {
-}
+// void Admin::manageResources() {
+// }
 
 void Admin::displayInfo() {
-    cout << "Admin: " << firstName << " " << lastName << endl;
+    cout << "ID: " <<id<< endl;
+    cout << "Name: " << firstName << " " << lastName << endl;
+    cout << "Email: " <<email<< endl;
+    cout << "Acces Level: " <<accessLevel<< endl;
 }
