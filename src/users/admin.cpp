@@ -1,4 +1,4 @@
-#include "admin.h"
+#include "Admin.h"
 #include <iostream>
 using namespace std;
 
