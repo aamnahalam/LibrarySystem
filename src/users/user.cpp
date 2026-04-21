@@ -1,16 +1,23 @@
-#include "User.h"
+#include "user.h"
 #include <iostream>
 using namespace std;
 
-User::User(int id, string firstName, string lastName)
-    : Person(id, firstName, lastName) {}
+User::User(int id, string firstName, string lastName, string email, string password
+, double balance)
+    : Person(id, firstName, lastName,email,password) {}
 
-void User::borrowResource() {
+//  Add Balance
+void User::rechargebalance(double amount) {
+    accountbalance+=amount;
 }
-
-void User::returnResource() {
+// Add points
+void User::earnpoints(int points) {
+    loyaltypoints+=points;
 }
 
 void User::displayInfo() {
-    cout << "User: " << firstName << " " << lastName << endl;
+    cout << "User Name: " << firstName << " " << lastName << endl;
+    cout << "Email: " <<email<<endl;
+    cout << "Balance: "<<accountbalance<<endl;
+    cout << "Loyalty Points: " << loyaltypoints<<endl;
 }
