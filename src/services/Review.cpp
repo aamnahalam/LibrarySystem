@@ -1,19 +1,57 @@
 #include "Review.h"
+#include "user.h"
+#include <string>
 
-Review::Review()
+Review::Review(int ratingValue, const string &reviewText, User *user) : ratingValue(ratingValue), reviewText(reviewText), user(user), isHidden(false)
 {
 }
-
-void Review::addReview(const std::string& userId, const std::string& comment, int rating)
+Review::~Review()
 {
+    user = nullptr;
 }
-
-std::string Review::getComment() const
+void Review::addReview(const string &text, int rating)
 {
-    return comment;
+    reviewText = text;
+    ratingValue = rating;
+    isHidden = false;
 }
-
-int Review::getRating() const
+void Review::hideReview()
 {
-    return rating;
+    isHidden = true;
+}
+void Review::setRatingValue(int rating)
+{
+    ratingValue = rating;
+}
+void Review::setReviewText(const string &text)
+{
+    reviewText = text;
+}
+int Review::getRatingValue() const
+{
+    return ratingValue;
+}
+string Review::getReviewText() const
+{
+    return reviewText;
+}
+User *Review::getUser() const
+{
+    return user;
+}
+bool Review::isHiddenReview() const
+{
+    return isHidden;
+}
+string Review::toString() const
+{
+    string status = isHidden ? "Hidden" : "Visible";
+    return "Review(Rating: " + to_string(ratingValue) + ", Status: " + status + ")\nText: " + reviewText;
+}
+void Review::getUserName() const
+{
+    if (user != nullptr)
+    {
+        user->displayInfo();
+    }
 }
