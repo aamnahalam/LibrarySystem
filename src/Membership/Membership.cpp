@@ -1,31 +1,12 @@
+#include <iostream>
 #include "Membership.h"
+using namespace std;
 
-Membership::Membership()
-{
-}
+// Constructor definition for Membership class:
+Membership::Membership(const string &levelName) : levelName(levelName) {}
 
-void Membership::renewMembership()
+// Method definition to get level Name:
+string Membership::getLevelName() const
 {
-}
-
-void Membership::cancelMembership()
-{
-}
-
-void Membership::setStartDate(const std::string& date)
-{
-}
-
-std::string Membership::getStartDate() const
-{
-    return startDate;
-}
-
-void Membership::setEndDate(const std::string& date)
-{
-}
-
-std::string Membership::getEndDate() const
-{
-    return endDate;
+    return levelName;
 }

@@ -3,12 +3,16 @@
 
 #include "Membership.h"
 
+// Normal Membership: Borrow upto 2 books, no discount
 class NormalMembership : public Membership
 {
 public:
+    // Constructor for NormalMembership class:
     NormalMembership();
-
-    void renewMembership() override;
+    // overriden functions:
+    int getMaxBorrowLimit() const override;
+    double getFineDiscount() const override;
+    void displayDetails() const override;
 };
 
 #endif

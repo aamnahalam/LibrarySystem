@@ -2,25 +2,32 @@
 #define MEMBERSHIP_H
 
 #include <string>
-
+using namespace std;
+// Abstract Base class for Membership types:
 class Membership
 {
 public:
-    Membership();
+    // Constructor for Membership class:
+    Membership(const string &levelName);
 
-    virtual void renewMembership();
-    virtual void cancelMembership();
+    // Destructor:
+    virtual ~Membership() = default;
 
-    void setStartDate(const std::string& date);
-    std::string getStartDate() const;
+    // Method to get level name:
+    string getLevelName() const;
 
-    void setEndDate(const std::string& date);
-    std::string getEndDate() const;
+    // Pure virtual function to get Max Borrow Limit:
+    virtual int getMaxBorrowLimit() const = 0;
+
+    // Pure virtual function to get Fine Discount:
+    virtual double getFineDiscount() const = 0;
+
+    // Pure virtual function to Display Details:
+    virtual void displayDetails() const = 0;
 
 protected:
-    std::string startDate;
-    std::string endDate;
-    bool active;
+    // Attributes
+    string levelName;
 };
 
 #endif
