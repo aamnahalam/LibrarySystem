@@ -16,6 +16,15 @@ void User::earnpoints(int points)
     loyaltypoints += points;
 }
 
+string User::getEmail() const
+{
+    return email;
+}
+string User::getFullName() const
+{
+    return firstName + " " + lastName;
+}
+
 void User::displayInfo()
 {
     cout << "User Name: " << firstName << " " << lastName << endl;
