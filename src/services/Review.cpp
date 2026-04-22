@@ -1,10 +1,11 @@
 #include "Review.h"
 #include "user.h"
 #include <string>
-
+// Definition of Constructor:
 Review::Review(int ratingValue, const string &reviewText, User *user) : ratingValue(ratingValue), reviewText(reviewText), user(user), isHidden(false)
 {
 }
+// Definition of Destructor:
 Review::~Review()
 {
     user = nullptr;
@@ -19,6 +20,7 @@ void Review::hideReview()
 {
     isHidden = true;
 }
+// Definition of setters:
 void Review::setRatingValue(int rating)
 {
     ratingValue = rating;
@@ -27,6 +29,7 @@ void Review::setReviewText(const string &text)
 {
     reviewText = text;
 }
+// Definition of getters:
 int Review::getRatingValue() const
 {
     return ratingValue;
@@ -43,6 +46,7 @@ bool Review::isHiddenReview() const
 {
     return isHidden;
 }
+// Definition of utility functions:
 string Review::toString() const
 {
     string status = isHidden ? "Hidden" : "Visible";
@@ -52,6 +56,7 @@ void Review::getUserName() const
 {
     if (user != nullptr)
     {
+        // Calling method of User class
         user->displayInfo();
     }
 }
