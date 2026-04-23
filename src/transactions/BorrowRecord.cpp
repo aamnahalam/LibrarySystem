@@ -1,5 +1,5 @@
 #include "BorrowRecord.h"
-#include "User.h"
+#include "user.h"
 #include <iostream>
 using namespace std;
 
