@@ -3,27 +3,31 @@
 #define FINEWALLETMANAGER_H
 
 #include <string>
+#include "user.h"
 
 class FineWalletManager
 {
 public:
+    // Constructors:
     FineWalletManager();
+    FineWalletManager(double initialFine, int days);
 
     // Fine related
-    void calculateFine(int daysLate);
+    double calculateFine(int daysLate, double rate);
+    bool deductFromBalance(User *user, double amount);
+    void rechargeWallet(User *user, double amount);
+
+    // Setters:
+    void setFineAmount(double amount);
+    void setOverdueDays(int days);
+
+    // Getters:
     double getFineAmount() const;
-
-    // Wallet related
-    void addBalance(double amount);
-    void deductBalance(double amount);
-    double getBalance() const;
-
-    // Payment
-    void payFine();
+    int getOverdueDays() const;
 
 private:
     double fineAmount;
-    double balance;
+    int overdueDays;
 };
 
 #endif
