@@ -18,10 +18,13 @@ public:
          double balance);
 
     void rechargebalance(double balance);
+    bool deductFromBalance(double amount);
     void earnpoints(int points);
 
+    int getID() const;
     string getEmail() const;
-    string getFullName()const;
+    string getFullName() const;
+    double getAccountBalance() const;
 
     void displayInfo() override;
 };
