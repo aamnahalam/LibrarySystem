@@ -15,6 +15,10 @@ Resource::Resource(int id, string title, string author, string category)
     borrowDuration = 0;
 }
 
+string Resource::getTitle() const {
+    return title;
+}
+
 void Resource::updateAvailability(bool status)
 {
     isAvailable = status;
@@ -23,6 +27,10 @@ void Resource::updateAvailability(bool status)
 void Resource::addRating(int value)
 {
     rating = (rating + value) / 2;
+}
+
+bool Resource::getAvailability(){
+    return isAvailable;
 }
 
 bool Resource::operator>(Resource& other)
