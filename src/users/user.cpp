@@ -10,12 +10,25 @@ void User::rechargebalance(double amount)
 {
     accountbalance += amount;
 }
+// Deduct from balance
+bool User::deductFromBalance(double amount)
+{
+    if (accountbalance >= amount)
+    {
+        accountbalance -= amount;
+        return true;
+    }
+    return false;
+}
 // Add points
 void User::earnpoints(int points)
 {
     loyaltypoints += points;
 }
 
+int User::getID()const{
+    return id;
+}
 string User::getEmail() const
 {
     return email;
@@ -23,6 +36,10 @@ string User::getEmail() const
 string User::getFullName() const
 {
     return firstName + " " + lastName;
+}
+double User::getAccountBalance() const
+{
+    return accountbalance;
 }
 
 void User::displayInfo()
