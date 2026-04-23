@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FINEWALLETMANAGER_H
 #define FINEWALLETMANAGER_H
 

@@ -1,11 +1,5 @@
-#ifndef BORROWLIMITEXCEEDEDEXCEPTION_H
-#define BORROWLIMITEXCEEDEDEXCEPTION_H
+#include "BorrowLimitExceededException.h"
 
-#include "LibraryException.h"
-
-class BorrowLimitExceededException : public LibraryException {
-public:
-    BorrowLimitExceededException(string message);
-};
-
-#endif
+BorrowLimitExceededException::BorrowLimitExceededException(string message)
+    : LibraryException(message) {
+}
