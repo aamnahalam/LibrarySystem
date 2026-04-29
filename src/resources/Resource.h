@@ -23,10 +23,13 @@ public:
     virtual void displayDetails() = 0;
     void updateAvailability(bool status);
 
+    string getTitle() const;
+
     virtual int getBorrowLimit() = 0;
     virtual double getFineRate() = 0;
 
     void addRating(int value);
+    bool getAvailability();
 
     bool operator>(Resource& other);
 };
