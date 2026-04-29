@@ -3,17 +3,36 @@
 #include "BorrowRecord.h"
 #include "Membership.h"
 #include <iostream>
+#include <stdexcept>
 using namespace std;
-int convertDate(string date){
-    if(date.size() != 10){
-        cout<<" Invalid Date Format. "<<endl;
+
+int convertDate(string date) {
+    if (date.size() != 10) {
+        cout << " Invalid Date Format. Use YYYY-MM-DD" << endl;
+        return 0;
+    }
+
+    try {
+        // stoi will throw invalid_argument if it hits a letter
+        int year = stoi(date.substr(0, 4));
+        int month = stoi(date.substr(5, 2));
+        int day = stoi(date.substr(8, 2));
+
+        // You can manually throw an error if the numbers are nonsense
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            throw out_of_range("Month or Day is logically incorrect");
+        }
+
+        return year * 10000 + month * 100 + day;
+    } 
+    catch (const invalid_argument& e) {
+        cerr << "Data Error: Date contains non-numeric characters: " << e.what() << endl;
         return 0;
     } 
-  int year=stoi(date.substr(0,4));
-  int month=stoi(date.substr(5,2));
-  int day=stoi(date.substr(8,2));
-    return year*10000+month*100+day;
-
+    catch (const out_of_range& e) {
+        cerr << "Data Error: Date values are logically impossible: " << e.what() << endl;
+        return 0;
+    }
 }
 
 int addDays(int date, int days)
@@ -280,6 +299,9 @@ bool User::operator==(const User& other) const {
 }
 
 
+    const vector<BorrowRecord>& getBorrowHistory() const { return borrowHistory; }
 
-
-
+     int getID() const{return id;}
+    string getEmail() const{return email;}
+    string getFullName() const{return fullname;}
+    double getAccountBalance() const {return accountbalance;}

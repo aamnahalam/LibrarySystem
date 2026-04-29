@@ -5,6 +5,10 @@
 #include<string>
 using namespace std;
 
+class Resource;
+class User;
+class LibrarySystem;
+
 class Admin : public Person {
 private:
 string accessLevel;
@@ -13,10 +17,25 @@ public:
     string password,
     string level);
 
-    // void manageUsers();
-    // void manageResources();
+    void addResources(Resource *r, LibrarySystem& system);
+    void removeResources(int resourceID, LibrarySystem& system);
+    void updateResources(int resourceID, LibrarySystem& system);
+
+    void lockUser(int userID, LibrarySystem& system);
+
+    
+ mm void generateCustomerReport(LibrarySystem& system);
+    void generateIssuedResourcesReport(LibrarySystem& system);
+    void generateOverdueResourcesReport(LibrarySystem& system);
+    void generateFineReport(LibrarySystem& system);
+
+    
+    void approveDigitalUpload(int resourceID, LibrarySystem& system);
+    void assignCardType(int userID, LibrarySystem& system);
+
 
     void displayInfo() override;
+
 };
 
 #endif

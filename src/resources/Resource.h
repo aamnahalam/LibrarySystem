@@ -31,6 +31,10 @@ public:
     void addRating(int value);
     bool getAvailability();
 
+
+    int getResourceID() const;
+    bool getDigitalAvailable() const;
+
     bool operator>(Resource& other);
 };
 
