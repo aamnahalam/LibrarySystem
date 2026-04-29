@@ -244,7 +244,7 @@ void User::viewhistory() {
         return;
     }
     cout<< " Borrow History: "<<endl;
-    for(int i=0; i<(Int)borrowHistory.size(); i++){
+    for(int i=0; i<(int)borrowHistory.size(); i++){
         borrowHistory[i].showRecord();
     }
 }
