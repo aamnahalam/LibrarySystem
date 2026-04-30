@@ -1,23 +1,20 @@
 #include "NormalMembership.h"
 #include <iostream>
+using namespace std;
 
-NormalMembership::NormalMembership() : Membership("Normal")
+NormalMembership::NormalMembership() : Membership("Normal")   // 🔥 THIS IS REQUIRED
 {
+    borrowLimit = 3;
+    borrowedCount = 0;
+}
+int NormalMembership::getMaxBorrowLimit() const {
+    return 3;
 }
 
-int NormalMembership::getMaxBorrowLimit() const
-{
-    return 2;
-}
-
-double NormalMembership::getFineDiscount() const
-{
-    // No discount for Normal Membership
+double NormalMembership::getFineDiscount() const {
     return 0.0;
 }
-void NormalMembership::displayDetails() const
-{
-    cout << "Membership: Normal" << endl;
-    cout << "Borrow Limit: 2" << endl;
-    cout << "Fine Discount: 0%" << endl;
+
+void NormalMembership::displayDetails() const {
+    cout << "Normal Membership\n";
 }
