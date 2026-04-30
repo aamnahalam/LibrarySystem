@@ -3,17 +3,36 @@
 #include "BorrowRecord.h"
 #include "Membership.h"
 #include <iostream>
+#include <stdexcept>
 using namespace std;
-int convertDate(string date){
-    if(date.size() != 10){
-        cout<<" Invalid Date Format. "<<endl;
+
+int convertDate(string date) {
+    if (date.size() != 10) {
+        cout << " Invalid Date Format. Use YYYY-MM-DD" << endl;
+        return 0;
+    }
+
+    try {
+        // stoi will throw invalid_argument if it hits a letter
+        int year = stoi(date.substr(0, 4));
+        int month = stoi(date.substr(5, 2));
+        int day = stoi(date.substr(8, 2));
+
+        // You can manually throw an error if the numbers are nonsense
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            throw out_of_range("Month or Day is logically incorrect");
+        }
+
+        return year * 10000 + month * 100 + day;
+    } 
+    catch (const invalid_argument& e) {
+        cerr << "Data Error: Date contains non-numeric characters: " << e.what() << endl;
         return 0;
     } 
-  int year=stoi(date.substr(0,4));
-  int month=stoi(date.substr(5,2));
-  int day=stoi(date.substr(8,2));
-    return year*10000+month*100+day;
-
+    catch (const out_of_range& e) {
+        cerr << "Data Error: Date values are logically impossible: " << e.what() << endl;
+        return 0;
+    }
 }
 
 int addDays(int date, int days)
@@ -58,10 +77,6 @@ int getTotalDays(int dateInt) {
     //30-day assumption consistently
     return (year * 360) + (month * 30) + day;
 }
-
-User::User(int id, string firstName, string lastName, string email, string password, double balance)
-    : Person(id, firstName, lastName, email, password) {}
-
 //  Add Balance
 User::User(int id, string firstName, string lastName, string email, string password
 , double balance)
@@ -94,7 +109,7 @@ bool User::borrowresources(Resource* r, string date){
     // Check Membership Limit
     if(membership!=nullptr){
         int limit=membership->getMaxBorrowLimit();
-        if(borrowedResources.size()>=limit){
+        if((int)borrowedResources.size()>=limit){
             cout<< "Borrow Limit Exceeded. "<<endl;
             return false;
         }
@@ -126,7 +141,7 @@ bool User::borrowresources(Resource* r, string date){
 // Return Resource 
 double User::returnresources(Resource* r, string date){
     bool found=false;
-    for(int i=0; i<borrowedResources.size(); i++){
+    for(int i=0; i<(int)borrowedResources.size(); i++){
         if (borrowedResources[i]==r){
             borrowedResources.erase(borrowedResources.begin()+i);
             r->updateAvailability(true);
@@ -141,7 +156,7 @@ double User::returnresources(Resource* r, string date){
     
     bool historyFound=false;
     // Update Borrow Record
-    for(int i = 0; i < borrowHistory.size(); i++){
+    for(int i = 0; i < (int)borrowHistory.size(); i++){
         
         if(borrowHistory[i].getResourceName() == r->getTitle() &&
         !borrowHistory[i].getReturnStatus()){
@@ -153,7 +168,7 @@ double User::returnresources(Resource* r, string date){
             if(returnDate == 0){
     cout << "Invalid Return Date.\n";
     return 0.0;
-}
+              }
             int dueDate = convertDate(borrowHistory[i].getDueDate());
 
             borrowHistory[i].markAsReturned(date);
@@ -204,18 +219,6 @@ void User::rechargebalance(double amount) {
     }
     accountbalance+=amount;
     cout<<" Balance Recharged Successfully. "<<endl;
-User::User(int id, string firstName, string lastName, string email, string password, double balance)
-    : Person(id, firstName, lastName, email, password) {}
-
-//  Add Balance
-void User::rechargebalance(double amount)
-{
-    accountbalance += amount;
-}
-// Add points
-void User::earnpoints(int points)
-{
-    loyaltypoints += points;
 }
 
 // Deduct from balance
@@ -247,13 +250,6 @@ string User::getFullName() const
     return firstName + " " + lastName;
 }
 
-void User::displayInfo()
-{
-    cout << "User Name: " << firstName << " " << lastName << endl;
-    cout << "Email: " << email << endl;
-    cout << "Balance: " << accountbalance << endl;
-    cout << "Loyalty Points: " << loyaltypoints << endl;
-}
 double User::getAccountBalance() const
 {
     return accountbalance;
@@ -267,7 +263,7 @@ void User::viewhistory() {
         return;
     }
     cout<< " Borrow History: "<<endl;
-    for(int i=0; i<borrowHistory.size(); i++){
+    for(int i=0; i<(int)borrowHistory.size(); i++){
         borrowHistory[i].showRecord();
     }
 }
@@ -303,13 +299,9 @@ bool User::operator==(const User& other) const {
 }
 
 
+    const vector<BorrowRecord>& getBorrowHistory() const { return borrowHistory; }
 
-
-
-void User::displayInfo()
-{
-    cout << "User Name: " << firstName << " " << lastName << endl;
-    cout << "Email: " << email << endl;
-    cout << "Balance: " << accountbalance << endl;
-    cout << "Loyalty Points: " << loyaltypoints << endl;
-}
+     int getID() const{return id;}
+    string getEmail() const{return email;}
+    string getFullName() const{return fullname;}
+    double getAccountBalance() const {return accountbalance;}

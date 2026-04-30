@@ -23,10 +23,17 @@ public:
     virtual void displayDetails() = 0;
     void updateAvailability(bool status);
 
+    string getTitle() const;
+
     virtual int getBorrowLimit() = 0;
     virtual double getFineRate() = 0;
 
     void addRating(int value);
+    bool getAvailability();
+
+
+    int getResourceID() const;
+    bool getDigitalAvailable() const;
 
     bool operator>(Resource& other);
 };
