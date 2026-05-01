@@ -38,5 +38,10 @@ bool Resource::operator>(Resource& other)
     return rating > other.rating;
 }
 
-    int getResourceID() const { return resourceID; } 
-    bool getDigitalAvailable() const { return digitalAvailable; } 
+int Resource::getResourceID() const { 
+    return resourceID; 
+} 
+
+bool Resource::getDigitalAvailable() const { 
+    return digitalAvailable; 
+} 

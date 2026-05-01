@@ -86,8 +86,8 @@ void LibrarySystem::borrowResource(int resourceID) {
     }
 
     for (auto r : resources) {
-        if (r->getID() == resourceID) {   // assuming getID() exists
-            if (r->isAvailable()) {
+        if (r->getResourceID() == resourceID) {
+            if (r->getAvailability()) {
                 r->updateAvailability(false);
                 std::cout << "Resource borrowed successfully!\n";
                 return;
@@ -104,7 +104,7 @@ void LibrarySystem::borrowResource(int resourceID) {
 // -------- BASIC RETURN FUNCTION --------
 void LibrarySystem::returnResource(int resourceID) {
     for (auto r : resources) {
-        if (r->getID() == resourceID) {
+        if (r->getResourceID() == resourceID) {
             r->updateAvailability(true);
             std::cout << "Resource returned successfully!\n";
             return;

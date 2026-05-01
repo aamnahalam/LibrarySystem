@@ -47,3 +47,7 @@ string Person::getEmail() const {
 string Person::getFullName() const {
     return firstName + " " + lastName;
 }
+
+string Person::getPassword() const {
+    return password;
+}

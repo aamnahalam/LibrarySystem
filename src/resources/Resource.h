@@ -39,8 +39,9 @@ public:
 
     bool operator>(const Resource& other) const;
 
-    // Friend class for Admin access
+    // Friend class for Admin and LibrarySystem access
     friend class Admin;
+    friend class LibrarySystem;
 };
 
 #endif

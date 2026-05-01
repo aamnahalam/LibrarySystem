@@ -26,6 +26,7 @@ public:
     int getID() const;
     string getEmail() const;
     string getFullName() const;
+    string getPassword() const;
 };
 
 #endif
