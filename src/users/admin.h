@@ -18,13 +18,13 @@ public:
     string level);
 
     void addResources(Resource *r, LibrarySystem& system);
-    void removeResources(int resourceID, LibrarySystem& system);
-    void updateResources(int resourceID, LibrarySystem& system);
+    bool removeResources(int resourceID, LibrarySystem& system);
+    bool updateResources(int resourceID, LibrarySystem& system);
 
     void lockUser(int userID, LibrarySystem& system);
 
     
- mm void generateCustomerReport(LibrarySystem& system);
+  void generateCustomerReport(LibrarySystem& system);
     void generateIssuedResourcesReport(LibrarySystem& system);
     void generateOverdueResourcesReport(LibrarySystem& system);
     void generateFineReport(LibrarySystem& system);

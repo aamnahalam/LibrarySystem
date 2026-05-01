@@ -4,6 +4,8 @@
 #include <string>
 using namespace std;
 
+class Admin; // forward declaration
+
 class Resource
 {
 protected:
@@ -36,6 +38,10 @@ public:
     bool getDigitalAvailable() const;
 
     bool operator>(const Resource& other) const;
+
+    // Friend class for Admin and LibrarySystem access
+    friend class Admin;
+    friend class LibrarySystem;
 };
 
 #endif

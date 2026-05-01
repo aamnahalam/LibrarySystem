@@ -21,6 +21,12 @@ public:
     virtual void displayInfo() = 0; 
     // pure virtual → makes it abstract class
     virtual  ~Person();
+
+    // Getters for derived classes
+    int getID() const;
+    string getEmail() const;
+    string getFullName() const;
+    string getPassword() const;
 };
 
 #endif
