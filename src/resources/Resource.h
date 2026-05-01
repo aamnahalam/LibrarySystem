@@ -35,7 +35,7 @@ public:
     int getResourceID() const;
     bool getDigitalAvailable() const;
 
-    bool operator>(Resource& other);
+    bool operator>(const Resource& other) const;
 };
 
 #endif
