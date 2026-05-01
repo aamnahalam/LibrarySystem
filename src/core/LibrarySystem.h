@@ -4,34 +4,8 @@
 #include <vector>
 #include <string>
 #include "Resource.h"
-
-class User {
-private:
-    std::string name;
-    std::string email;
-    std::string password;
-
-public:
-    User(std::string n, std::string e, std::string p);
-    void displayInfo();
-
-    std::string getEmail();
-    std::string getPassword();
-};
-
-class Admin {
-private:
-    std::string name;
-    std::string email;
-    std::string password;
-
-public:
-    Admin(std::string n, std::string e, std::string p);
-    void displayInfo();
-
-    std::string getEmail();
-    std::string getPassword();
-};
+#include "../users/user.h"
+#include "../users/admin.h"
 
 class LibrarySystem {
 private:
@@ -60,6 +34,9 @@ public:
     
     void borrowResource(int resourceID);
     void returnResource(int resourceID);
+
+    // Friend classes for admin access
+    friend class Admin;
 };
 
 #endif

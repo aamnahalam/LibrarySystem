@@ -1,46 +1,6 @@
 #include "LibrarySystem.h"
 #include <iostream>
 
-// ---------------- USER ----------------
-User::User(std::string n, std::string e, std::string p) {
-    name = n;
-    email = e;
-    password = p;
-}
-
-void User::displayInfo() {
-    std::cout << "User Name: " << name << std::endl;
-    std::cout << "Email: " << email << std::endl;
-}
-
-std::string User::getEmail() {
-    return email;
-}
-
-std::string User::getPassword() {
-    return password;
-}
-
-// ---------------- ADMIN ----------------
-Admin::Admin(std::string n, std::string e, std::string p) {
-    name = n;
-    email = e;
-    password = p;
-}
-
-void Admin::displayInfo() {
-    std::cout << "Admin Name: " << name << std::endl;
-    std::cout << "Email: " << email << std::endl;
-}
-
-std::string Admin::getEmail() {
-    return email;
-}
-
-std::string Admin::getPassword() {
-    return password;
-}
-
 // ---------------- LIBRARY SYSTEM ----------------
 LibrarySystem::LibrarySystem() {
     currentUser = nullptr;

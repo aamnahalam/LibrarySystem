@@ -20,15 +20,15 @@ bool BorrowRecord::getReturnStatus() {
     return isReturned;
 }
 
-string BorrowRecord::getResourceName() {
+string BorrowRecord::getResourceName() const {
     return resourceName;
 }
 
-string BorrowRecord::getBorrowDate() {
+string BorrowRecord::getBorrowDate() const {
     return borrowDate;
 }
 
-string BorrowRecord::getDueDate() {
+string BorrowRecord::getDueDate() const {
     return dueDate;
 }
 
@@ -45,4 +45,58 @@ void BorrowRecord::showRecord() {
     } else {
         cout << "Status: Not Returned" << endl;
     }
+}
+
+bool BorrowRecord::isOverdue() const {
+    if (isReturned) return false;
+    
+    // Parse due date (format: YYYY-MM-DD)
+    int dueYear = stoi(dueDate.substr(0, 4));
+    int dueMonth = stoi(dueDate.substr(5, 2));
+    int dueDay = stoi(dueDate.substr(8, 2));
+    
+    // Get current date
+    time_t now = time(0);
+    tm* currentTime = localtime(&now);
+    int currentYear = 1900 + currentTime->tm_year;
+    int currentMonth = 1 + currentTime->tm_mon;
+    int currentDay = currentTime->tm_mday;
+    
+    // Compare dates
+    if (currentYear > dueYear) return true;
+    if (currentYear < dueYear) return false;
+    if (currentMonth > dueMonth) return true;
+    if (currentMonth < dueMonth) return false;
+    return currentDay > dueDay;
+}
+
+double BorrowRecord::calculateFine() const {
+    if (isReturned) return 0.0;
+    
+    // Parse due date
+    int dueYear = stoi(dueDate.substr(0, 4));
+    int dueMonth = stoi(dueDate.substr(5, 2));
+    int dueDay = stoi(dueDate.substr(8, 2));
+    
+    // Get current date
+    time_t now = time(0);
+    tm* currentTime = localtime(&now);
+    int currentYear = 1900 + currentTime->tm_year;
+    int currentMonth = 1 + currentTime->tm_mon;
+    int currentDay = currentTime->tm_mday;
+    
+    // Calculate days overdue
+    int daysOverdue = 0;
+    if (currentYear > dueYear) {
+        daysOverdue = (currentYear - dueYear) * 365;
+    }
+    if (currentMonth > dueMonth) {
+        daysOverdue += (currentMonth - dueMonth) * 30;
+    }
+    if (currentDay > dueDay) {
+        daysOverdue += (currentDay - dueDay);
+    }
+    
+    // Fine rate: $1 per day
+    return daysOverdue > 0 ? daysOverdue * 1.0 : 0.0;
 }

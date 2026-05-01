@@ -255,6 +255,7 @@ double User::getAccountBalance() const
     return accountbalance;
 }
 
+const vector<BorrowRecord>& User::getBorrowHistory() const { return borrowHistory; }
 
 // view  history
 void User::viewhistory() {
@@ -276,6 +277,7 @@ void User::updateprofile(string firstName, string lastName, string email, string
     this->password=password;
     cout<< " Profile Updated Successfully. "<<endl;
 }
+
 void User::displayInfo() {
     cout<<  "User Information: "<<endl;
     cout<<  "-----------------------------"<<endl;
@@ -297,11 +299,3 @@ void User::displayInfo() {
 bool User::operator==(const User& other) const {
     return id==other.id;
 }
-
-
-    const vector<BorrowRecord>& getBorrowHistory() const { return borrowHistory; }
-
-     int getID() const{return id;}
-    string getEmail() const{return email;}
-    string getFullName() const{return fullname;}
-    double getAccountBalance() const {return accountbalance;}

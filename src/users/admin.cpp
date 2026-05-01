@@ -3,6 +3,8 @@
 #include "user.h"
 #include "Resource.h"
 #include "Membership.h"
+#include "NormalMembership.h"
+#include "FrequentReaderMembership.h"
 #include "BorrowRecord.h"
 #include <iostream>
 using namespace std;
@@ -75,7 +77,7 @@ void Admin::generateOverdueResourcesReport(LibrarySystem& system) {
     for (const auto& user : system.users) {
         for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
-                cout << "User: " << user->getFullName() << ", Resource: " << record.getResourceTitle() 
+                cout << "User: " << user->getFullName() << ", Resource: " << record.getResourceName()
                      << ", Due Date: " << record.getDueDate() << endl;
             }
         }
@@ -86,7 +88,7 @@ void Admin::generateFineReport(LibrarySystem& system) {
     cout << "Fine Report:\n";
     for (const auto& user : system.users) {
         double totalFine = 0.0;
-        for (const auto& record : user->getBorrowHistory) {
+        for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
                 totalFine += record.calculateFine();
             }
@@ -112,13 +114,13 @@ void Admin::assignCardType(int userID, LibrarySystem& system) {
     for (auto& u : system.users) {
         if (u->getID() == userID) {
             if (u->getAccountBalance() > 100) {
-                u->setMembership(new Membership("Gold"));
+                u->setMembership(new FrequentReaderMembership());
                 cout<< " Gold Card Assigned Successfully. "<<endl;
             } else if (u->getAccountBalance() > 50) {
-                u->setMembership(new Membership("Silver"));
+                u->setMembership(new FrequentReaderMembership());
                 cout<< " Silver Card Assigned Successfully. "<<endl;
             } else {
-                u->setMembership(new Membership("Bronze"));
+                u->setMembership(new NormalMembership());
                 cout<< " Bronze Card Assigned Successfully. "<<endl;
             }
             return;
@@ -128,8 +130,8 @@ void Admin::assignCardType(int userID, LibrarySystem& system) {
 }
 
 void Admin::displayInfo() {
-    cout << "ID: " <<id<< endl;
-    cout << "Name: " << firstName << " " << lastName << endl;
-    cout << "Email: " <<email<< endl;
+    cout << "ID: " << getID() << endl;
+    cout << "Name: " << getFullName() << endl;
+    cout << "Email: " << getEmail() << endl;
     cout << "Acces Level: " <<accessLevel<< endl;
 }

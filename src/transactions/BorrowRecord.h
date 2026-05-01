@@ -2,6 +2,7 @@
 #define BORROWRECORD_H
 
 #include <string>
+#include <ctime>
 using namespace std;
 
 class User; // forward declaration
@@ -21,11 +22,15 @@ public:
     void markAsReturned(string returnDate);
     bool getReturnStatus();
 
-    string getResourceName();
-    string getBorrowDate();
-    string getDueDate();
+    string getResourceName() const;
+    string getBorrowDate() const;
+    string getDueDate() const;
 
     void showRecord();
+
+    // Additional methods needed by Admin
+    bool isOverdue() const;
+    double calculateFine() const;
 };
 
 #endif

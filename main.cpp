@@ -1,7 +1,7 @@
 #include<iostream>
 #include "src/core/LibrarySystem.h"
-#include "src/users/User.h"
-#include "src/users/Admin.h"
+#include "src/users/user.h"
+#include "src/users/admin.h"
 
 using namespace std;
 
@@ -14,7 +14,7 @@ int main() {
     User* u2 = new User(2, "Sara", "Ahmed", "sara@gmail.com", "5678", 150.0);
 
     // Create admin
-    Admin* a1 = new Admin(101, "Mr", "Boss");
+    Admin* a1 = new Admin(101, "Mr", "Boss", "admin@library.com", "admin123", "SuperAdmin");
 
     // Add to system
     system.addUser(u1);
