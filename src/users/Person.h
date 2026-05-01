@@ -2,6 +2,7 @@
 #define PERSON_H
 
 #include <string>
+#include <iostream>
 using namespace std;
 
 class Person {
@@ -11,7 +12,6 @@ protected:
     string lastName;
     string email;
     string password;
-    
 
 public:
     Person(int id, string firstName, string lastName, string email, string password);
