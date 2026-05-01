@@ -1,34 +1,60 @@
 #include "LibrarySystem.h"
 #include <iostream>
-using namespace std;
 
 // ---------------- USER ----------------
-User::User(string n, string e, string p) {
+User::User(std::string n, std::string e, std::string p) {
     name = n;
     email = e;
     password = p;
 }
 
 void User::displayInfo() {
-    cout << "User Name: " << name << endl;
-    cout << "Email: " << email << endl;
+    std::cout << "User Name: " << name << std::endl;
+    std::cout << "Email: " << email << std::endl;
+}
+
+std::string User::getEmail() {
+    return email;
+}
+
+std::string User::getPassword() {
+    return password;
 }
 
 // ---------------- ADMIN ----------------
-Admin::Admin(string n, string e, string p) {
+Admin::Admin(std::string n, std::string e, std::string p) {
     name = n;
     email = e;
     password = p;
 }
 
 void Admin::displayInfo() {
-    cout << "Admin Name: " << name << endl;
-    cout << "Email: " << email << endl;
+    std::cout << "Admin Name: " << name << std::endl;
+    std::cout << "Email: " << email << std::endl;
+}
+
+std::string Admin::getEmail() {
+    return email;
+}
+
+std::string Admin::getPassword() {
+    return password;
 }
 
 // ---------------- LIBRARY SYSTEM ----------------
-LibrarySystem::LibrarySystem() {}
+LibrarySystem::LibrarySystem() {
+    currentUser = nullptr;
+    currentAdmin = nullptr;
+}
 
+// Destructor to prevent memory leaks
+LibrarySystem::~LibrarySystem() {
+    for (auto u : users) delete u;
+    for (auto a : admins) delete a;
+    for (auto r : resources) delete r;
+}
+
+// -------- ADD FUNCTIONS --------
 void LibrarySystem::addUser(User* user) {
     users.push_back(user);
 }
@@ -37,42 +63,93 @@ void LibrarySystem::addAdmin(Admin* admin) {
     admins.push_back(admin);
 }
 
+void LibrarySystem::addResource(Resource* resource) {
+    resources.push_back(resource);
+}
+
 // -------- USER LOGIN --------
-bool LibrarySystem::userLogin(string email, string password) {
+bool LibrarySystem::userLogin(std::string email, std::string password) {
     for (auto u : users) {
-        if (u->email == email && u->password == password) {
-            cout << "User Login Successful! Welcome " << u->name << endl;
+        if (u->getEmail() == email && u->getPassword() == password) {
+            currentUser = u;
+            std::cout << "User Login Successful! Welcome " << std::endl;
             return true;
         }
     }
-    cout << "User Login Failed!" << endl;
+    std::cout << "User Login Failed!" << std::endl;
     return false;
 }
 
 // -------- ADMIN LOGIN --------
-bool LibrarySystem::adminLogin(string email, string password) {
+bool LibrarySystem::adminLogin(std::string email, std::string password) {
     for (auto a : admins) {
-        if (a->email == email && a->password == password) {
-            cout << "Admin Login Successful! Welcome " << a->name << endl;
+        if (a->getEmail() == email && a->getPassword() == password) {
+            currentAdmin = a;
+            std::cout << "Admin Login Successful! Welcome " << std::endl;
             return true;
         }
     }
-    cout << "Admin Login Failed!" << endl;
+    std::cout << "Admin Login Failed!" << std::endl;
     return false;
 }
 
-void LibrarySystem::showAllUsers() {
-    cout << "\n--- USERS ---\n";
+// -------- DISPLAY FUNCTIONS --------
+void LibrarySystem::showAllUsers() const {
+    std::cout << "\n--- USERS ---\n";
     for (auto u : users) {
         u->displayInfo();
-        cout << "-----------------\n";
+        std::cout << "-----------------\n";
     }
 }
 
-void LibrarySystem::showAllAdmins() {
-    cout << "\n--- ADMINS ---\n";
+void LibrarySystem::showAllAdmins() const {
+    std::cout << "\n--- ADMINS ---\n";
     for (auto a : admins) {
         a->displayInfo();
-        cout << "-----------------\n";
+        std::cout << "-----------------\n";
     }
+}
+
+void LibrarySystem::showAllResources() const {
+    std::cout << "\n--- RESOURCES ---\n";
+    for (auto r : resources) {
+        r->displayDetails();   // assuming Resource has this
+        std::cout << "-----------------\n";
+    }
+}
+
+// -------- BASIC BORROW FUNCTION --------
+void LibrarySystem::borrowResource(int resourceID) {
+    if (!currentUser) {
+        std::cout << "Please login as user first!\n";
+        return;
+    }
+
+    for (auto r : resources) {
+        if (r->getID() == resourceID) {   // assuming getID() exists
+            if (r->isAvailable()) {
+                r->updateAvailability(false);
+                std::cout << "Resource borrowed successfully!\n";
+                return;
+            } else {
+                std::cout << "Resource not available!\n";
+                return;
+            }
+        }
+    }
+
+    std::cout << "Resource not found!\n";
+}
+
+// -------- BASIC RETURN FUNCTION --------
+void LibrarySystem::returnResource(int resourceID) {
+    for (auto r : resources) {
+        if (r->getID() == resourceID) {
+            r->updateAvailability(true);
+            std::cout << "Resource returned successfully!\n";
+            return;
+        }
+    }
+
+    std::cout << "Resource not found!\n";
 }

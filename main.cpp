@@ -10,8 +10,8 @@ int main() {
     LibrarySystem system;
 
     // Create users
-    User* u1 = new User(1, "Ali", "Khan");
-    User* u2 = new User(2, "Sara", "Ahmed");
+    User* u1 = new User(1,"Ali", "Khan", "ali@email.com", "1234", 78.0);
+    User* u2 = new User(2, "Sara", "Ahmed", "sara@gmail.com", "5678", 150.0);
 
     // Create admin
     Admin* a1 = new Admin(101, "Mr", "Boss");

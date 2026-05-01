@@ -3,44 +3,63 @@
 
 #include <vector>
 #include <string>
-using namespace std;
+#include "Resource.h"
 
 class User {
-public:
-    string name;
-    string email;
-    string password;
+private:
+    std::string name;
+    std::string email;
+    std::string password;
 
-    User(string n, string e, string p);
+public:
+    User(std::string n, std::string e, std::string p);
     void displayInfo();
+
+    std::string getEmail();
+    std::string getPassword();
 };
 
 class Admin {
-public:
-    string name;
-    string email;
-    string password;
+private:
+    std::string name;
+    std::string email;
+    std::string password;
 
-    Admin(string n, string e, string p);
+public:
+    Admin(std::string n, std::string e, std::string p);
     void displayInfo();
+
+    std::string getEmail();
+    std::string getPassword();
 };
 
 class LibrarySystem {
 private:
-    vector<User*> users;
-    vector<Admin*> admins;
+    std::vector<User*> users;
+    std::vector<Admin*> admins;
+    std::vector<Resource*> resources;
+
+    User* currentUser;
+    Admin* currentAdmin;
 
 public:
     LibrarySystem();
+    ~LibrarySystem();
 
     void addUser(User* user);
     void addAdmin(Admin* admin);
+    void addResource(Resource* resource);
 
-    bool userLogin(string email, string password);
-    bool adminLogin(string email, string password);
+    bool userLogin(std::string email, std::string password);
+    bool adminLogin(std::string email, std::string password);
 
-    void showAllUsers();
-    void showAllAdmins();
+    void showAllUsers() const;
+    void showAllAdmins() const;
+    void showAllResources() const;
+
+    
+    void borrowResource(int resourceID);
+    void returnResource(int resourceID);
 };
 
 #endif
