@@ -1,155 +1,129 @@
 #include "LibrarySystem.h"
-#include <iostream>
+#include "User.h"
+#include "Resource.h"
+#include "BorrowRecord.h"
 
-// ---------------- USER ----------------
-User::User(std::string n, std::string e, std::string p) {
-    name = n;
-    email = e;
-    password = p;
-}
+#include <algorithm>
 
-void User::displayInfo() {
-    std::cout << "User Name: " << name << std::endl;
-    std::cout << "Email: " << email << std::endl;
-}
-
-std::string User::getEmail() {
-    return email;
-}
-
-std::string User::getPassword() {
-    return password;
-}
-
-// ---------------- ADMIN ----------------
-Admin::Admin(std::string n, std::string e, std::string p) {
-    name = n;
-    email = e;
-    password = p;
-}
-
-void Admin::displayInfo() {
-    std::cout << "Admin Name: " << name << std::endl;
-    std::cout << "Email: " << email << std::endl;
-}
-
-std::string Admin::getEmail() {
-    return email;
-}
-
-std::string Admin::getPassword() {
-    return password;
-}
-
-// ---------------- LIBRARY SYSTEM ----------------
 LibrarySystem::LibrarySystem() {
     currentUser = nullptr;
-    currentAdmin = nullptr;
 }
 
-// Destructor to prevent memory leaks
-LibrarySystem::~LibrarySystem() {
-    for (auto u : users) delete u;
-    for (auto a : admins) delete a;
-    for (auto r : resources) delete r;
+// Register user
+bool LibrarySystem::registerUser(User u) {
+    users.push_back(u);
+    return true;
 }
 
-// -------- ADD FUNCTIONS --------
-void LibrarySystem::addUser(User* user) {
-    users.push_back(user);
-}
-
-void LibrarySystem::addAdmin(Admin* admin) {
-    admins.push_back(admin);
-}
-
-void LibrarySystem::addResource(Resource* resource) {
-    resources.push_back(resource);
-}
-
-// -------- USER LOGIN --------
-bool LibrarySystem::userLogin(std::string email, std::string password) {
-    for (auto u : users) {
-        if (u->getEmail() == email && u->getPassword() == password) {
-            currentUser = u;
-            std::cout << "User Login Successful! Welcome " << std::endl;
+// Authenticate user
+bool LibrarySystem::authenticate(std::string email, std::string password) {
+    for (auto &user : users) {
+        if (user.getEmail() == email && user.getPassword() == password) {
+            currentUser = &user;
             return true;
         }
     }
-    std::cout << "User Login Failed!" << std::endl;
     return false;
 }
 
-// -------- ADMIN LOGIN --------
-bool LibrarySystem::adminLogin(std::string email, std::string password) {
-    for (auto a : admins) {
-        if (a->getEmail() == email && a->getPassword() == password) {
-            currentAdmin = a;
-            std::cout << "Admin Login Successful! Welcome " << std::endl;
-            return true;
-        }
-    }
-    std::cout << "Admin Login Failed!" << std::endl;
-    return false;
+// Logout
+void LibrarySystem::logout() {
+    currentUser = nullptr;
 }
 
-// -------- DISPLAY FUNCTIONS --------
-void LibrarySystem::showAllUsers() const {
-    std::cout << "\n--- USERS ---\n";
-    for (auto u : users) {
-        u->displayInfo();
-        std::cout << "-----------------\n";
-    }
-}
-
-void LibrarySystem::showAllAdmins() const {
-    std::cout << "\n--- ADMINS ---\n";
-    for (auto a : admins) {
-        a->displayInfo();
-        std::cout << "-----------------\n";
-    }
-}
-
-void LibrarySystem::showAllResources() const {
-    std::cout << "\n--- RESOURCES ---\n";
-    for (auto r : resources) {
-        r->displayDetails();   // assuming Resource has this
-        std::cout << "-----------------\n";
-    }
-}
-
-// -------- BASIC BORROW FUNCTION --------
-void LibrarySystem::borrowResource(int resourceID) {
-    if (!currentUser) {
-        std::cout << "Please login as user first!\n";
-        return;
-    }
+// Search resource by keyword
+std::vector<Resource*> LibrarySystem::searchResource(std::string keyword) {
+    std::vector<Resource*> result;
 
     for (auto r : resources) {
-        if (r->getID() == resourceID) {   // assuming getID() exists
-            if (r->isAvailable()) {
-                r->updateAvailability(false);
-                std::cout << "Resource borrowed successfully!\n";
-                return;
-            } else {
-                std::cout << "Resource not available!\n";
-                return;
-            }
+        if (r->getTitle().find(keyword) != std::string::npos) {
+            result.push_back(r);
         }
     }
 
-    std::cout << "Resource not found!\n";
+    return result;
 }
 
-// -------- BASIC RETURN FUNCTION --------
-void LibrarySystem::returnResource(int resourceID) {
+// Filter by category
+std::vector<Resource*> LibrarySystem::filterResources(std::string category) {
+    std::vector<Resource*> result;
+
     for (auto r : resources) {
-        if (r->getID() == resourceID) {
-            r->updateAvailability(true);
-            std::cout << "Resource returned successfully!\n";
-            return;
+        if (r->getCategory() == category) {
+            result.push_back(r);
         }
     }
 
-    std::cout << "Resource not found!\n";
+    return result;
+}
+
+// Filter available resources
+std::vector<Resource*> LibrarySystem::filterByAvailability() {
+    std::vector<Resource*> result;
+
+    for (auto r : resources) {
+        if (r->isAvailable()) {
+            result.push_back(r);
+        }
+    }
+
+    return result;
+}
+
+// Filter new arrivals
+std::vector<Resource*> LibrarySystem::filterByNewArrivals() {
+    std::vector<Resource*> result;
+
+    for (auto r : resources) {
+        if (r->isNewArrival()) {
+            result.push_back(r);
+        }
+    }
+
+    return result;
+}
+
+// Filter most borrowed
+std::vector<Resource*> LibrarySystem::filterByMostBorrowed() {
+    std::vector<Resource*> result = resources;
+
+    std::sort(result.begin(), result.end(), [](Resource* a, Resource* b) {
+        return a->getBorrowCount() > b->getBorrowCount();
+    });
+
+    return result;
+}
+
+// Filter by rating
+std::vector<Resource*> LibrarySystem::filterByRating() {
+    std::vector<Resource*> result = resources;
+
+    std::sort(result.begin(), result.end(), [](Resource* a, Resource* b) {
+        return a->getRating() > b->getRating();
+    });
+
+    return result;
+}
+
+// Filter by user preference
+std::vector<Resource*> LibrarySystem::filterByUserPreference(User* u) {
+    std::vector<Resource*> result;
+
+    for (auto r : resources) {
+        if (r->getCategory() == u->getPreferredCategory()) {
+            result.push_back(r);
+        }
+    }
+
+    return result;
+}
+
+// Save data (placeholder)
+void LibrarySystem::saveData() {
+    // Implement file/database saving logic
+}
+
+// Load data (placeholder)
+void LibrarySystem::loadData() {
+    // Implement file/database loading logic
 }

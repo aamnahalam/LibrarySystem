@@ -3,63 +3,38 @@
 
 #include <vector>
 #include <string>
-#include "Resource.h"
 
-class User {
-private:
-    std::string name;
-    std::string email;
-    std::string password;
-
-public:
-    User(std::string n, std::string e, std::string p);
-    void displayInfo();
-
-    std::string getEmail();
-    std::string getPassword();
-};
-
-class Admin {
-private:
-    std::string name;
-    std::string email;
-    std::string password;
-
-public:
-    Admin(std::string n, std::string e, std::string p);
-    void displayInfo();
-
-    std::string getEmail();
-    std::string getPassword();
-};
+class User;
+class Resource;
+class BorrowRecord;
 
 class LibrarySystem {
 private:
-    std::vector<User*> users;
-    std::vector<Admin*> admins;
+    std::vector<User> users;
     std::vector<Resource*> resources;
-
+    std::vector<BorrowRecord> borrowRecords;
     User* currentUser;
-    Admin* currentAdmin;
 
 public:
     LibrarySystem();
-    ~LibrarySystem();
 
-    void addUser(User* user);
-    void addAdmin(Admin* admin);
-    void addResource(Resource* resource);
+    // User management
+    bool registerUser(User u);
+    bool authenticate(std::string email, std::string password);
+    void logout();
 
-    bool userLogin(std::string email, std::string password);
-    bool adminLogin(std::string email, std::string password);
+    // Resource search & filters
+    std::vector<Resource*> searchResource(std::string keyword);
+    std::vector<Resource*> filterResources(std::string category);
+    std::vector<Resource*> filterByAvailability();
+    std::vector<Resource*> filterByNewArrivals();
+    std::vector<Resource*> filterByMostBorrowed();
+    std::vector<Resource*> filterByRating();
+    std::vector<Resource*> filterByUserPreference(User* u);
 
-    void showAllUsers() const;
-    void showAllAdmins() const;
-    void showAllResources() const;
-
-    
-    void borrowResource(int resourceID);
-    void returnResource(int resourceID);
+    // Data persistence
+    void saveData();
+    void loadData();
 };
 
 #endif
