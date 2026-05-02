@@ -13,6 +13,8 @@ Resource::Resource(int id, string title, string author, string category)
     digitalAvailable = false;
     price = 0;
     borrowDuration = 0;
+    borrowCount = 0;
+    isNewArrival = true;
 }
 
 string Resource::getTitle() const {
@@ -33,7 +35,23 @@ bool Resource::getAvailability(){
     return isAvailable;
 }
 
-bool Resource::operator>(Resource& other)
+string Resource::getCategory() const {
+    return category;
+}
+
+double Resource::getReviewScore() const {
+    return rating;
+}
+
+int Resource::getBorrowCount() const {
+    return borrowCount;
+}
+
+bool Resource::getIsNewArrival() const {
+    return isNewArrival;
+}
+
+bool Resource::operator>(const Resource& other) const
 {
     return rating > other.rating;
 }

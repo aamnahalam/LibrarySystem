@@ -3,19 +3,21 @@
 
 #include <vector>
 #include <string>
+using namespace std;
 
 class User;
+class Admin;
 class Resource;
 class BorrowRecord;
 
 class LibrarySystem {
-private:
+public:
     std::vector<User> users;
     std::vector<Resource*> resources;
     std::vector<BorrowRecord> borrowRecords;
     User* currentUser;
 
-public:
+
     LibrarySystem();
 
     // User management

@@ -62,7 +62,7 @@ std::vector<Resource*> LibrarySystem::filterByAvailability() {
     std::vector<Resource*> result;
 
     for (auto r : resources) {
-        if (r->isAvailable()) {
+        if (r->getAvailability()) {
             result.push_back(r);
         }
     }
@@ -75,7 +75,7 @@ std::vector<Resource*> LibrarySystem::filterByNewArrivals() {
     std::vector<Resource*> result;
 
     for (auto r : resources) {
-        if (r->isNewArrival()) {
+        if (r->getIsNewArrival()) {
             result.push_back(r);
         }
     }
@@ -99,7 +99,7 @@ std::vector<Resource*> LibrarySystem::filterByRating() {
     std::vector<Resource*> result = resources;
 
     std::sort(result.begin(), result.end(), [](Resource* a, Resource* b) {
-        return a->getRating() > b->getRating();
+        return a->getReviewScore() > b->getReviewScore();
     });
 
     return result;
