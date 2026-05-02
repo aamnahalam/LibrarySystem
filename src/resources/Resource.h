@@ -18,6 +18,8 @@ protected:
     bool digitalAvailable;
     double price;
     int borrowDuration;
+    int borrowCount;
+    bool isNewArrival;
 
 public:
     Resource(int id, string title, string author, string category);
@@ -32,7 +34,10 @@ public:
 
     void addRating(int value);
     bool getAvailability();
-
+    string getCategory() const;
+    double getReviewScore() const;
+    int getBorrowCount() const;
+    bool getIsNewArrival() const;
 
     int getResourceID() const;
     bool getDigitalAvailable() const;

@@ -103,6 +103,13 @@ string User::getFullName() const {
     return firstName + " " + lastName;
 }
 
+string User::getPreferredCategory() const {
+    if (favouriteCategories.empty()) {
+        return "";
+    }
+    return favouriteCategories[0];
+}
+
 const vector<BorrowRecord>& User::getBorrowHistory() const { return borrowHistory; }
 
 int convertDate(string date) {

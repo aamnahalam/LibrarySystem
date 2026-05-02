@@ -47,6 +47,7 @@ public:
     string getFullName() const;
     string getPassword() const;
     double getAccountBalance() const;
+    string getPreferredCategory() const;
     // Operator Overloading
     bool operator==(const User& other) const;
 
