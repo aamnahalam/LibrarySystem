@@ -53,9 +53,9 @@ bool Admin::updateResources(int resourceID, LibrarySystem& system) {
 
 // LOCK USER 
 void Admin::lockUser(int userID, LibrarySystem& system) {
-    for (auto& u : system.users) {
-        if (u.getID() == userID) {
-            u.lock(); 
+    for (auto u : system.users) {
+        if (u && u->getID() == userID) {
+            u->lock(); 
             cout << " User Locked Successfully. " << endl;
             return;
         }
@@ -66,11 +66,13 @@ void Admin::lockUser(int userID, LibrarySystem& system) {
 // CUSTOMER REPORT
 void Admin::generateCustomerReport(LibrarySystem& system) {
     cout << "Customer Report:\n";
-    for (const auto& user : system.users) {
-        cout << "ID: " << user.getID()
-             << ", Name: " << user.getFullName()
-             << ", Email: " << user.getEmail()
-             << ", Balance: " << user.getAccountBalance() << endl;
+    for (const auto user : system.users) {
+        if (user) {
+            cout << "ID: " << user->getID()
+                 << ", Name: " << user->getFullName()
+                 << ", Email: " << user->getEmail()
+                 << ", Balance: " << user->getAccountBalance() << endl;
+        }
     }
 }
 
@@ -88,10 +90,13 @@ void Admin::generateIssuedResourcesReport(LibrarySystem& system) {
 // OVERDUE REPORT
 void Admin::generateOverdueResourcesReport(LibrarySystem& system) {
     cout << "Overdue Resources Report:\n";
-    for (const auto& user : system.users) {
-        for (const auto& record : user.getBorrowHistory()) {
+    for (const auto user : system.users) {
+        if (!user) {
+            continue;
+        }
+        for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
-                cout << "User: " << user.getFullName()
+                cout << "User: " << user->getFullName()
                      << ", Resource: " << record.getResourceName()
                      << ", Due Date: " << record.getDueDate() << endl;
             }
@@ -102,17 +107,20 @@ void Admin::generateOverdueResourcesReport(LibrarySystem& system) {
 // FINE REPORT
 void Admin::generateFineReport(LibrarySystem& system) {
     cout << "Fine Report:\n";
-    for (const auto& user : system.users) {
+    for (const auto user : system.users) {
+        if (!user) {
+            continue;
+        }
         double totalFine = 0.0;
 
-        for (const auto& record : user.getBorrowHistory()) {
+        for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
                 totalFine += record.calculateFine();
             }
         }
 
         if (totalFine > 0) {
-            cout << "User: " << user.getFullName()
+            cout << "User: " << user->getFullName()
                  << ", Total Fine: $" << totalFine << endl;
         }
     }
@@ -132,19 +140,19 @@ void Admin::approveDigitalUpload(int resourceID, LibrarySystem& system) {
 
 // ASSIGN MEMBERSHIP 
 void Admin::assignCardType(int userID, LibrarySystem& system) {
-    for (auto& u : system.users) {
-        if (u.getID() == userID) {
+    for (auto u : system.users) {
+        if (u && u->getID() == userID) {
 
-            if (u.getAccountBalance() > 100) {
-                u.setMembership(new FrequentReaderMembership());
+            if (u->getAccountBalance() > 100) {
+                u->setMembership(new FrequentReaderMembership());
                 cout << " Gold Card Assigned Successfully. " << endl;
             } 
-            else if (u.getAccountBalance() > 50) {
-                u.setMembership(new FrequentReaderMembership());
+            else if (u->getAccountBalance() > 50) {
+                u->setMembership(new FrequentReaderMembership());
                 cout << " Silver Card Assigned Successfully. " << endl;
             } 
             else {
-                u.setMembership(new NormalMembership());
+                u->setMembership(new NormalMembership());
                 cout << " Bronze Card Assigned Successfully. " << endl;
             }
 

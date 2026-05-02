@@ -1,6 +1,9 @@
 #include "Resource.h"
 #include <iostream>
 
+Resource::~Resource() {
+}
+
 Resource::Resource(int id, string title, string author, string category)
 {
     resourceID = id;

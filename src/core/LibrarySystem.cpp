@@ -2,6 +2,7 @@
 #include "User.h"
 #include "Resource.h"
 #include "BorrowRecord.h"
+#include "../users/admin.h"
 
 #include <algorithm>
 
@@ -9,21 +10,58 @@ LibrarySystem::LibrarySystem() {
     currentUser = nullptr;
 }
 
-// Register user
-bool LibrarySystem::registerUser(User u) {
-    users.push_back(u);
-    return true;
+LibrarySystem::~LibrarySystem() {
+    for (auto user : users) {
+        delete user;
+    }
+    for (auto admin : admins) {
+        delete admin;
+    }
+    for (auto resource : resources) {
+        delete resource;
+    }
+    for (auto record : borrowRecords) {
+        delete record;
+    }
+}
+
+void LibrarySystem::addUser(User* user) {
+    if (user) {
+        users.push_back(user);
+    }
+}
+
+void LibrarySystem::addAdmin(Admin* admin) {
+    if (admin) {
+        admins.push_back(admin);
+    }
 }
 
 // Authenticate user
 bool LibrarySystem::authenticate(std::string email, std::string password) {
-    for (auto &user : users) {
-        if (user.getEmail() == email && user.getPassword() == password) {
-            currentUser = &user;
+    for (auto user : users) {
+        if (user->getEmail() == email && user->getPassword() == password) {
+            currentUser = user;
             return true;
         }
     }
     return false;
+}
+
+void LibrarySystem::showAllUsers() const {
+    for (const auto user : users) {
+        if (user) {
+            user->displayInfo();
+        }
+    }
+}
+
+void LibrarySystem::showAllAdmins() const {
+    for (const auto admin : admins) {
+        if (admin) {
+           admin->displayInfo();
+        }
+    }
 }
 
 // Logout
