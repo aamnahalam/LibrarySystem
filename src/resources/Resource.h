@@ -25,6 +25,7 @@ public:
     Resource(int id, string title, string author, string category);
 
     virtual void displayDetails() = 0;
+    virtual ~Resource();
     void updateAvailability(bool status);
 
     string getTitle() const;

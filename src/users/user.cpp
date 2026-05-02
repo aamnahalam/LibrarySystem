@@ -6,6 +6,10 @@
 #include <stdexcept>
 using namespace std;
 
+int convertDate(string date);
+int addDays(int date, int days);
+string formatDate(int date);
+
 // Constructor
 User::User(int id, string firstName, string lastName, string email, string password, double balance)
     : Person(id, firstName, lastName,email,password) {
@@ -105,6 +109,9 @@ int getTotalDays(int dateInt) {
 }
 string User::getEmail() const {
     return email;
+}
+string User::getPassword() const {
+    return password;
 }
 string User::getFullName() const {
     return firstName + " " + lastName;

@@ -12,16 +12,19 @@ class BorrowRecord;
 
 class LibrarySystem {
 public:
-    std::vector<User> users;
+    std::vector<User*> users;
+    std::vector<Admin*> admins;
     std::vector<Resource*> resources;
-    std::vector<BorrowRecord> borrowRecords;
+    std::vector<BorrowRecord*> borrowRecords;
     User* currentUser;
 
-
     LibrarySystem();
+    ~LibrarySystem();
+
+    void addUser(User* user);
+    void addAdmin(Admin* admin);
 
     // User management
-    bool registerUser(User u);
     bool authenticate(std::string email, std::string password);
     void logout();
 
@@ -33,6 +36,10 @@ public:
     std::vector<Resource*> filterByMostBorrowed();
     std::vector<Resource*> filterByRating();
     std::vector<Resource*> filterByUserPreference(User* u);
+
+    // Reporting
+    void showAllUsers() const;
+    void showAllAdmins() const;
 
     // Data persistence
     void saveData();
