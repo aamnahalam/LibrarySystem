@@ -1,6 +1,7 @@
 #include<iostream>
 #include "Person.h"
 
+// Constructor
 Person::Person(int id, string firstName, string lastName, string email, string password) {
     this->id = id;
     this->firstName = firstName;
@@ -33,15 +34,12 @@ Person::~Person(){}
 int Person::getID() const {
     return id;
 }
-
 string Person::getEmail() const {
     return email;
 }
-
 string Person::getFullName() const {
     return firstName + " " + lastName;
 }
-
 string Person::getPassword() const {
     return password;
 }

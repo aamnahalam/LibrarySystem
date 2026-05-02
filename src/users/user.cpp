@@ -6,6 +6,7 @@
 #include <stdexcept>
 using namespace std;
 
+// Constructor
 User::User(int id, string firstName, string lastName, string email, string password, double balance)
     : Person(id, firstName, lastName,email,password) {
         accountbalance=balance;
@@ -14,7 +15,7 @@ User::User(int id, string firstName, string lastName, string email, string passw
         readingFrequency=0;
         isLocked=false;
     }
-
+// Destructor
 User::~User() {
     delete membership;    // Clean up any dynamically allocated resources if needed
 }
@@ -24,10 +25,7 @@ void User::lock() {
     cout << "User account locked due to unpaid fines." << endl;
 }
 
-bool User::getLockStatus() const {
-    return isLocked;
-}
-
+// Member functions
 bool User::borrowresources(Resource* r, string date) {
     if (isLocked) {
         cout << "Access Denied: Your account is locked due to unpaid fines. Please recharge." << endl;
@@ -90,11 +88,20 @@ void User::setMembership(Membership* m) {
     membership = m;
 }
 
+// Getters
 double User::getAccountBalance() const {
     return accountbalance;
 }
 int User::getID()const{
     return id;
+}
+int getTotalDays(int dateInt) {
+    int year = dateInt / 10000;
+    int month = (dateInt / 100) % 100;
+    int day = dateInt % 100;
+
+    //30-day assumption consistently
+    return (year * 360) + (month * 30) + day;
 }
 string User::getEmail() const {
     return email;
@@ -102,16 +109,19 @@ string User::getEmail() const {
 string User::getFullName() const {
     return firstName + " " + lastName;
 }
-
 string User::getPreferredCategory() const {
     if (favouriteCategories.empty()) {
         return "";
     }
     return favouriteCategories[0];
 }
+bool User::getLockStatus() const {
+    return isLocked;
+}
 
 const vector<BorrowRecord>& User::getBorrowHistory() const { return borrowHistory; }
 
+// Date conversion and manipulation functions
 int convertDate(string date) {
     if (date.size() != 10) {
         cout << " Invalid Date Format. Use YYYY-MM-DD" << endl;
@@ -140,7 +150,6 @@ int convertDate(string date) {
         return 0;
     }
 }
-
 int addDays(int date, int days)
 {
     int year = date / 10000;
@@ -162,16 +171,6 @@ int addDays(int date, int days)
 
     return year * 10000 + month * 100 + day;
 }
-
-int getTotalDays(int dateInt) {
-    int year = dateInt / 10000;
-    int month = (dateInt / 100) % 100;
-    int day = dateInt % 100;
-
-    //30-day assumption consistently
-    return (year * 360) + (month * 30) + day;
-}
-
 string formatDate(int date)
 {
     int year = date / 10000;
@@ -183,7 +182,6 @@ string formatDate(int date)
 
     return to_string(year) + "-" + m + "-" + d;
 }
-
 // view  history
 void User::viewhistory() {
     if(borrowHistory.empty()){
@@ -195,7 +193,6 @@ void User::viewhistory() {
         borrowHistory[i].showRecord();
     }
 }
-
 // update profile
 void User::updateprofile(string firstName, string lastName, string email, string password)  {
     this->firstName=firstName;
@@ -221,7 +218,6 @@ void User::displayInfo() {
         membership->displayDetails();
     }
 }
-
 //operator overload for user comparison
 bool User::operator==(const User& other) const {
     return id==other.id;

@@ -24,12 +24,11 @@ void Admin::addResources(Resource *r, LibrarySystem& system) {
     system.resources.push_back(r);
     cout << " Resource Added Successfully. " << endl;
 }
-
-// REMOVE RESOURCE (FIXED MEMORY LEAK)
+// REMVE RESOURCE
 bool Admin::removeResources(int resourceID, LibrarySystem& system) {
     for (auto it = system.resources.begin(); it != system.resources.end(); ++it) {
         if ((*it)->getResourceID() == resourceID) {
-            delete *it; // 🔥 IMPORTANT FIX
+            delete *it; 
             system.resources.erase(it);
             cout << " Resource Removed Successfully. " << endl;
             return true;
@@ -39,7 +38,7 @@ bool Admin::removeResources(int resourceID, LibrarySystem& system) {
     return false;
 }
 
-// UPDATE RESOURCE (FIXED ACCESS)
+// UPDATE RESOURCE 
 bool Admin::updateResources(int resourceID, LibrarySystem& system) {
     for (auto& r : system.resources) {
         if (r->getResourceID() == resourceID) {
@@ -52,11 +51,11 @@ bool Admin::updateResources(int resourceID, LibrarySystem& system) {
     return false;
 }
 
-// LOCK USER (FIXED LOGIC)
+// LOCK USER 
 void Admin::lockUser(int userID, LibrarySystem& system) {
     for (auto& u : system.users) {
         if (u.getID() == userID) {
-            u.lock();  // 🔥 PROPER LOCK
+            u.lock(); 
             cout << " User Locked Successfully. " << endl;
             return;
         }
@@ -75,7 +74,7 @@ void Admin::generateCustomerReport(LibrarySystem& system) {
     }
 }
 
-// ISSUED RESOURCES REPORT (FIXED ACCESS)
+// ISSUED RESOURCES REPORT
 void Admin::generateIssuedResourcesReport(LibrarySystem& system) {
     cout << "Issued Resources Report:\n";
     for (const auto& resource : system.resources) {
@@ -119,7 +118,7 @@ void Admin::generateFineReport(LibrarySystem& system) {
     }
 }
 
-// APPROVE DIGITAL UPLOAD (FIXED ACCESS)
+// APPROVE DIGITAL UPLOAD
 void Admin::approveDigitalUpload(int resourceID, LibrarySystem& system) {
     for (auto& r : system.resources) {
         if (r->getResourceID() == resourceID) {
@@ -131,7 +130,7 @@ void Admin::approveDigitalUpload(int resourceID, LibrarySystem& system) {
     cout << " Resource Not Found. " << endl;
 }
 
-// ASSIGN MEMBERSHIP (LOGIC FIXED)
+// ASSIGN MEMBERSHIP 
 void Admin::assignCardType(int userID, LibrarySystem& system) {
     for (auto& u : system.users) {
         if (u.getID() == userID) {
