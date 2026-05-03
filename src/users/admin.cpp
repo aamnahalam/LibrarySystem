@@ -65,7 +65,6 @@ void Admin::lockUser(int userID, LibrarySystem& system) {
 
 // CUSTOMER REPORT
 void Admin::generateCustomerReport(LibrarySystem& system) {
-    cout << "Customer Report:\n";
     for (const auto user : system.users) {
         if (user) {
             cout << "ID: " << user->getID()
@@ -78,7 +77,6 @@ void Admin::generateCustomerReport(LibrarySystem& system) {
 
 // ISSUED RESOURCES REPORT
 void Admin::generateIssuedResourcesReport(LibrarySystem& system) {
-    cout << "Issued Resources Report:\n";
     for (const auto& resource : system.resources) {
         if (!resource->getAvailability()) {
             cout << "Resource ID: " << resource->getResourceID()

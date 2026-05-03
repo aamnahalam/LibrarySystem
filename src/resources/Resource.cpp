@@ -24,6 +24,10 @@ string Resource::getTitle() const {
     return title;
 }
 
+string Resource::getAuthor() const {
+    return author;
+}
+
 void Resource::updateAvailability(bool status)
 {
     isAvailable = status;

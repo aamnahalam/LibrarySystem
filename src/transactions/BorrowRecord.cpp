@@ -33,9 +33,8 @@ string BorrowRecord::getDueDate() const {
 }
 
 void BorrowRecord::showRecord() {
-    cout << "User: ";
-    user->displayInfo();
-
+    cout << "User: " << user->getFullName() << " (ID: " << user->getID() << ")" << endl;
+    cout << "Email: " << user->getEmail() << endl;
     cout << "Resource: " << resourceName << endl;
     cout << "Borrow Date: " << borrowDate << endl;
     cout << "Due Date: " << dueDate << endl;
