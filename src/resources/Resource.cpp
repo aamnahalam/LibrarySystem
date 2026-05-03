@@ -1,7 +1,8 @@
 #include "Resource.h"
 #include <iostream>
 
-Resource::~Resource() {
+Resource::~Resource()
+{
 }
 
 Resource::Resource(int id, string title, string author, string category)
@@ -19,8 +20,14 @@ Resource::Resource(int id, string title, string author, string category)
     borrowCount = 0;
     isNewArrival = true;
 }
+void Resource::incrementBorrowCount()
+{
+    borrowCount++;
+    isNewArrival = false;
+}
 
-string Resource::getTitle() const {
+string Resource::getTitle() const
+{
     return title;
 }
 
@@ -34,35 +41,45 @@ void Resource::addRating(int value)
     rating = (rating + value) / 2;
 }
 
-bool Resource::getAvailability(){
+bool Resource::getAvailability()
+{
     return isAvailable;
 }
 
-string Resource::getCategory() const {
+string Resource::getCategory() const
+{
     return category;
 }
 
-double Resource::getReviewScore() const {
+double Resource::getReviewScore() const
+{
     return rating;
 }
-
-int Resource::getBorrowCount() const {
+double Resource::getRating() const
+{
+    return rating;
+}
+int Resource::getBorrowCount() const
+{
     return borrowCount;
 }
 
-bool Resource::getIsNewArrival() const {
+bool Resource::getIsNewArrival() const
+{
     return isNewArrival;
 }
 
-bool Resource::operator>(const Resource& other) const
+bool Resource::operator>(const Resource &other) const
 {
     return rating > other.rating;
 }
 
-int Resource::getResourceID() const { 
-    return resourceID; 
-} 
+int Resource::getResourceID() const
+{
+    return resourceID;
+}
 
-bool Resource::getDigitalAvailable() const { 
-    return digitalAvailable; 
-} 
+bool Resource::getDigitalAvailable() const
+{
+    return digitalAvailable;
+}

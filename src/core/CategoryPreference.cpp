@@ -27,7 +27,7 @@ string CategoryPreference::getCategory() const {
     return category;
 }
 
-// 🔥 simple validation logic
+//  simple validation logic
 bool CategoryPreference::isValidCategory(string category) {
     if (category == "Fiction" ||
         category == "Science" ||

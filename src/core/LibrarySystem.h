@@ -10,32 +10,34 @@ class Admin;
 class Resource;
 class BorrowRecord;
 
-class LibrarySystem {
-public:
-    std::vector<User*> users;
-    std::vector<Admin*> admins;
-    std::vector<Resource*> resources;
-    std::vector<BorrowRecord*> borrowRecords;
-    User* currentUser;
+class LibrarySystem
+{
+private:
+    vector<User *> users;
+    vector<Admin *> admins;
+    vector<Resource *> resources;
+    vector<BorrowRecord *> borrowRecords;
+    User *currentUser;
 
+public:
     LibrarySystem();
     ~LibrarySystem();
 
-    void addUser(User* user);
-    void addAdmin(Admin* admin);
+    void addUser(User *user);
+    void addAdmin(Admin *admin);
 
     // User management
-    bool authenticate(std::string email, std::string password);
+    bool authenticate(string email, string password);
     void logout();
 
     // Resource search & filters
-    std::vector<Resource*> searchResource(std::string keyword);
-    std::vector<Resource*> filterResources(std::string category);
-    std::vector<Resource*> filterByAvailability();
-    std::vector<Resource*> filterByNewArrivals();
-    std::vector<Resource*> filterByMostBorrowed();
-    std::vector<Resource*> filterByRating();
-    std::vector<Resource*> filterByUserPreference(User* u);
+    vector<Resource *> searchResource(string keyword);
+    vector<Resource *> filterResources(string category);
+    vector<Resource *> filterByAvailability();
+    vector<Resource *> filterByNewArrivals();
+    vector<Resource *> filterByMostBorrowed();
+    vector<Resource *> filterByRating();
+    vector<Resource *> filterByUserPreference(User *u);
 
     // Reporting
     void showAllUsers() const;
@@ -44,6 +46,7 @@ public:
     // Data persistence
     void saveData();
     void loadData();
+    friend class Admin;
 };
 
 #endif
