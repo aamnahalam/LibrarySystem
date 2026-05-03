@@ -3,7 +3,7 @@
 #define FINEWALLETMANAGER_H
 
 #include <string>
-#include "User.h"
+#include "../users/user.h"
 
 class FineWalletManager
 {

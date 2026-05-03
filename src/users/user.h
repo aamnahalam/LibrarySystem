@@ -13,6 +13,7 @@ class Membership;
 class BorrowRecord;
 
 class User : public Person {
+    friend class LibrarySystem;
 private:
     bool isLocked;
     int loyaltypoints;
@@ -52,6 +53,19 @@ public:
     string getPassword() const;
     double getAccountBalance() const;
     string getPreferredCategory() const;
+    int getLoyaltyPoints() const;
+    
+    // Loyalty Points Redemption
+    bool redeemPointsForDiscount(int pointsToRedeem);
+    bool redeemPointsForFineFreePass();
+    void displayLoyaltySummary() const;
+    
+    // Membership Upgrade
+    void checkAndUpgradeMembership();
+    void displayMembershipDetails() const;
+    bool changeMembershipTier(int tier);
+    void showMembershipOptions() const;
+    
     // Operator Overloading
     bool operator==(const User& other) const;
 

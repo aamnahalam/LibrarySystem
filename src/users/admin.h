@@ -27,6 +27,7 @@ public:
     
     void approveDigitalUpload(int resourceID, LibrarySystem& system);
     void assignCardType(int userID, LibrarySystem& system);
+    void assignMembershipTier(int userID, int tier, LibrarySystem& system);
 
     void displayInfo() override;
 

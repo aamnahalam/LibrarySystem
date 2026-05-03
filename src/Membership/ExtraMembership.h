@@ -1,17 +1,14 @@
-#ifndef NORMALMEMBERSHIP_H
-#define NORMALMEMBERSHIP_H
+#pragma once
+#ifndef EXTRAMEMBERSHIP_H
+#define EXTRAMEMBERSHIP_H
 
 #include "Membership.h"
 
-class NormalMembership : public Membership {
-
-private:
-    int borrowLimit;        // 2 books max
-    int borrowedCount;
-
+class ExtraMembership : public Membership
+{
 public:
-    NormalMembership();
-
+    ExtraMembership();
+    
     int getMaxBorrowLimit() const override;
     double getFineDiscount() const override;
     double getMonthlyPrice() const override;

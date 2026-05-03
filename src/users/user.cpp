@@ -2,6 +2,9 @@
 #include "../resources/Resource.h"
 #include "../transactions/BorrowRecord.h"
 #include "../Membership/Membership.h"
+#include "../Membership/NormalMembership.h"
+#include "../Membership/ExtraMembership.h"
+#include "../Membership/DeluxeMembership.h"
 #include <iostream>
 #include <stdexcept>
 using namespace std;
@@ -121,7 +124,7 @@ bool User::borrowresources(Resource *r, string date)
     string dueDateStr = formatDate(addDays(borrowDateInt, 7));
 
     cout << "Borrowing: " << r->getTitle() << " | Borrow: " << date << " | Due: " << dueDateStr << endl;
-    BorrowRecord record(this, r->getTitle(), date, dueDateStr);
+    BorrowRecord record(this, r->getResourceID(), r->getTitle(), date, dueDateStr);
     borrowHistory.push_back(record);
     readingFrequency++;
     earnpoints(5);
@@ -171,7 +174,7 @@ double User::returnresources(Resource *r, string date)
             borrowHistory[i].markAsReturned(date);
             if (returnDate > dueDate)
             {
-                int lateDays = getTotalDays(returnDate) - getTotalDays(dueDate);
+                int lateDays = returnDate - dueDate;
                 if (lateDays < 0)
                     lateDays = 0;
                 double fine = lateDays * r->getFineRate();
@@ -220,6 +223,80 @@ void User::setMembership(Membership *m)
     membership = m;
 }
 
+bool User::changeMembershipTier(int tier)
+{
+    double cost = 0.0;
+    string tierName;
+    switch (tier)
+    {
+        case 1:
+            cost = 0.0;
+            tierName = "Essential";
+            break;
+        case 2:
+            cost = 10.0;
+            tierName = "Extra";
+            break;
+        case 3:
+            cost = 20.0;
+            tierName = "Deluxe";
+            break;
+        default:
+            cout << "Invalid membership choice. Choose 1, 2 or 3." << endl;
+            return false;
+    }
+
+    if (membership != nullptr && membership->getLevelName() == tierName)
+    {
+        cout << "You already have the " << tierName << " membership." << endl;
+        return false;
+    }
+
+    if (accountbalance < cost)
+    {
+        cout << "Insufficient balance to choose the " << tierName << " plan. "
+             << "Required: Rs." << cost << ", Available: Rs." << accountbalance << endl;
+        return false;
+    }
+
+    Membership* newMembership = nullptr;
+    switch (tier)
+    {
+        case 1:
+            newMembership = new NormalMembership();
+            break;
+        case 2:
+            newMembership = new ExtraMembership();
+            break;
+        case 3:
+            newMembership = new DeluxeMembership();
+            break;
+    }
+
+    if (cost > 0.0)
+    {
+        accountbalance -= cost;
+        cout << "Rs." << cost << " deducted for " << tierName << " membership." << endl;
+        cout << "New balance: Rs." << accountbalance << endl;
+    }
+    else
+    {
+        cout << "Selected Essential (Free) tier." << endl;
+    }
+
+    setMembership(newMembership);
+    cout << "Membership changed successfully." << endl;
+    return true;
+}
+
+void User::showMembershipOptions() const
+{
+    cout << "\nMembership Options:" << endl;
+    cout << "  1. Essential (Free) - borrow up to 2 books, no fine discount" << endl;
+    cout << "  2. Extra ($10/month) - borrow up to 5 books, 25% fine discount, priority reservation" << endl;
+    cout << "  3. Deluxe ($20/month) - borrow up to 10 books, 50% fine discount, free waiver, priority queue" << endl;
+}
+
 // Getters
 double User::getAccountBalance() const
 {
@@ -259,6 +336,89 @@ string User::getPreferredCategory() const
 }
 
 const vector<BorrowRecord> &User::getBorrowHistory() const { return borrowHistory; }
+
+int User::getLoyaltyPoints() const
+{
+    return loyaltypoints;
+}
+
+// Redeem loyalty points for discount on balance
+bool User::redeemPointsForDiscount(int pointsToRedeem)
+{
+    if (loyaltypoints >= pointsToRedeem)
+    {
+        loyaltypoints -= pointsToRedeem;
+        double discount = (pointsToRedeem / 100.0) * 50; // 100 points = Rs.50 discount
+        accountbalance += discount;
+        cout << "Redeemed " << pointsToRedeem << " loyalty points for Rs." << discount << " balance credit!" << endl;
+        return true;
+    }
+    cout << "Insufficient loyalty points! You have: " << loyaltypoints << " points" << endl;
+    return false;
+}
+
+// Redeem loyalty points for fine waiver pass
+bool User::redeemPointsForFineFreePass()
+{
+    if (loyaltypoints >= 100)
+    {
+        loyaltypoints -= 100;
+        cout << "Redeemed 100 loyalty points for ONE fine-free pass!" << endl;
+        cout << "  Your next overdue fine will be waived!" << endl;
+        return true;
+    }
+    cout << "Insufficient loyalty points for fine waiver! Need: 100, Have: " << loyaltypoints << endl;
+    return false;
+}
+
+void User::displayLoyaltySummary() const
+{
+    cout << "\n" << string(50, '=') << endl;
+    cout << "        LOYALTY REWARDS SUMMARY" << endl;
+    cout << string(50, '=') << endl;
+    cout << "Current Points: " << loyaltypoints << endl;
+    cout << "Equivalent Discount: Rs." << (loyaltypoints / 100.0 * 50) << endl;
+    cout << "\nRedemption Options:" << endl;
+    cout << "  - 100 points -> Fine-free pass (next overdue book)" << endl;
+    cout << "  - 200 points -> Rs.100 balance credit" << endl;
+    cout << "  - 500 points -> Rs.250 balance credit + free book rental" << endl;
+    cout << "  - 1000 points -> Membership upgrade!" << endl;
+    cout << string(50, '=') << endl;
+}
+
+void User::checkAndUpgradeMembership()
+{
+    if (membership == nullptr) return;
+
+    string currentTier = membership->getLevelName();
+
+    if (loyaltypoints >= 1000 && currentTier != "Deluxe")
+    {
+        cout << "\nCONGRATULATIONS! You've earned enough loyalty points for a Deluxe upgrade!" << endl;
+        setMembership(new DeluxeMembership());
+        loyaltypoints -= 500;
+        cout << "   Deluxe membership activated!" << endl;
+    }
+    else if (loyaltypoints >= 500 && currentTier == "Essential")
+    {
+        cout << "\nYou're eligible for an Extra membership upgrade!" << endl;
+        setMembership(new ExtraMembership());
+        loyaltypoints -= 200;
+        cout << "   Extra membership activated!" << endl;
+    }
+    else
+    {
+        cout << "\nNo automatic membership upgrade available at this time." << endl;
+    }
+}
+
+void User::displayMembershipDetails() const
+{
+    if (membership != nullptr)
+    {
+        membership->displayDetails();
+    }
+}
 
 // Date conversion and manipulation functions
 int convertDate(string date)

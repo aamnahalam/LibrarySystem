@@ -3,15 +3,16 @@
 #define FREQUENTREADERMEMBERSHIP_H
 
 #include "Membership.h"
-// Frequent Reader Membership: Borrow upto 2 books, 20% discount
+
 class FrequentReaderMembership : public Membership
 {
 public:
-    // Constructor for FrequentReaderMembership class:
     FrequentReaderMembership();
-    // overriden functions:
+    
     int getMaxBorrowLimit() const override;
     double getFineDiscount() const override;
+    double getMonthlyPrice() const override;
+    string getPerks() const override;
     void displayDetails() const override;
 };
 
