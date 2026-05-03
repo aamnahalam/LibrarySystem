@@ -29,7 +29,8 @@ public:
     virtual ~Resource();
     void updateAvailability(bool status);
     string getTitle() const;
-    
+    string getAuthor() const;
+
     virtual int getBorrowLimit() = 0;
     virtual double getFineRate() = 0;
     

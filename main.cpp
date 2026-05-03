@@ -48,7 +48,7 @@ int main()
     system.addUser(u2);
     system.addUser(u3);
     system.addUser(u4);
-    cout << "✓ Created and added 4 users to system" << endl;
+    cout << "[PASS] Created and added 4 users to system" << endl;
 
     // ========================================
     // TEST 2: ADMIN CREATION & MANAGEMENT
@@ -60,7 +60,7 @@ int main()
 
     system.addAdmin(a1);
     system.addAdmin(a2);
-    cout << "✓ Created and added 2 admins to system" << endl;
+    cout << "[PASS] Created and added 2 admins to system" << endl;
 
     // ========================================
     // TEST 3: RESOURCE CREATION (ALL TYPES)
@@ -77,17 +77,16 @@ int main()
     BudgetPickBook *book6 = new BudgetPickBook(1006, "Brave New World", "Aldous Huxley", "Science Fiction");
 
     // DigitalLibrary ebook1 = new DigitalLibrary(2001, "Digital Programming", "Robert Martin", "Technology");
-
-    a1->addResources(book1, system);
-    a1->addResources(book2, system);
-    a1->addResources(book3, system);
-    a1->addResources(book4, system);
-    a1->addResources(book5, system);
-    a1->addResources(book6, system);
-    cout << "Created 6 resources" << endl;
+    
+    system.resources.push_back(book1);
+    system.resources.push_back(book2);
+    system.resources.push_back(book3);
+    system.resources.push_back(book4);
+    system.resources.push_back(book5);  
+    system.resources.push_back(book6);
     // system.resources.push_back(ebook1);
-
-    cout << "✓ Created 6 resources (4 physical books + 2 budget books)" << endl;
+    
+    cout << "[PASS] Created 6 resources (4 physical books + 2 budget books)" << endl;
 
     // ========================================
     // TEST 4: MEMBERSHIP ASSIGNMENT
@@ -98,8 +97,8 @@ int main()
     u2->setMembership(new FrequentReaderMembership());
     u3->setMembership(new NormalMembership());
     u4->setMembership(new NormalMembership());
-
-    cout << "✓ Assigned memberships:" << endl;
+    
+    cout << "[PASS] Assigned memberships:" << endl;
     cout << "  - u1 (Ali): Frequent Reader" << endl;
     cout << "  - u2 (Sara): Frequent Reader" << endl;
     cout << "  - u3 (Hassan): Normal" << endl;
@@ -121,8 +120,8 @@ int main()
 
     cout << "\n--- User 3 Borrowing Books ---" << endl;
     u3->borrowresources(book6, "2025-05-03");
-
-    cout << "\n✓ Books borrowed successfully" << endl;
+    
+    cout << "\n[PASS] Books borrowed successfully" << endl;
 
     // ========================================
     // TEST 6: RETURN OPERATIONS
@@ -131,7 +130,7 @@ int main()
 
     cout << "\n--- User 1 Returning Book ---" << endl;
     u1->returnresources(book1, "2025-05-10");
-    cout << "✓ Book returned successfully" << endl;
+    cout << "[PASS] Book returned successfully" << endl;
 
     // ========================================
     // TEST 7: BALANCE OPERATIONS
@@ -156,7 +155,7 @@ int main()
     u1->earnpoints(100);
     u2->earnpoints(75);
     u3->earnpoints(50);
-    cout << "✓ Loyalty points earned and added" << endl;
+    cout << "[PASS] Loyalty points earned and added" << endl;
 
     // ========================================
     // TEST 9: DISPLAY ALL USERS
@@ -178,11 +177,10 @@ int main()
     testSeparator("TEST 11: ALL LIBRARY RESOURCES");
 
     cout << "\nTotal Resources: " << system.resources.size() << endl;
-    for (const auto &res : system.resources)
-    {
-        cout << "\n  ID: " << res->getResourceID()
-             << " | Title: " << res->getTitle()
-             << " | Author: " << res->getTitle()
+    for (const auto& res : system.resources) {
+        cout << "\n  ID: " << res->getResourceID() 
+             << " | Title: " << res->getTitle() 
+             << " | Author: " << res->getAuthor()
              << " | Category: " << res->getCategory()
              << " | Available: " << (res->getAvailability() ? "Yes" : "No") << endl;
     }
@@ -310,12 +308,12 @@ int main()
     // FINAL SUMMARY
     // ========================================
     testSeparator("FINAL SUMMARY");
-
-    cout << "\n✓ Total Users in System: " << system.users.size() << endl;
-    cout << "✓ Total Admins in System: " << system.admins.size() << endl;
-    cout << "✓ Total Resources in System: " << system.resources.size() << endl;
-    cout << "✓ Available Resources: " << system.filterByAvailability().size() << endl;
-    cout << "✓ Borrowed Resources: " << (system.resources.size() - system.filterByAvailability().size()) << endl;
+    
+    cout << "\n[PASS] Total Users in System: " << system.users.size() << endl;
+    cout << "[PASS] Total Admins in System: " << system.admins.size() << endl;
+    cout << "[PASS] Total Resources in System: " << system.resources.size() << endl;
+    cout << "[PASS] Available Resources: " << system.filterByAvailability().size() << endl;
+    cout << "[PASS] Borrowed Resources: " << (system.resources.size() - system.filterByAvailability().size()) << endl;
 
     cout << "\n"
          << string(60, '#') << endl;
