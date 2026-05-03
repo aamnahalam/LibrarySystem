@@ -10,6 +10,7 @@ class User; // forward declaration
 class BorrowRecord {
 private:
     User* user;
+    int resourceID;
     string resourceName;
     string borrowDate;
     string dueDate;
@@ -17,14 +18,16 @@ private:
     bool isReturned;
 
 public:
-    BorrowRecord(User* user, string resourceName, string borrowDate, string dueDate);
+    BorrowRecord(User* user, int resourceID, string resourceName, string borrowDate, string dueDate);
 
     void markAsReturned(string returnDate);
     bool getReturnStatus()const;
 
+    int getResourceID() const;
     string getResourceName() const;
     string getBorrowDate() const;
     string getDueDate() const;
+    string getReturnDate() const;
 
     void showRecord();
 

@@ -7,6 +7,8 @@
 #include "src/resources/BudgetPickBook.h"
 #include "src/Membership/NormalMembership.h"
 #include "src/Membership/FrequentReaderMembership.h"
+#include "src/Membership/ExtraMembership.h"
+#include "src/Membership/DeluxeMembership.h"
 #include "src/services/FineWalletManager.h"
 #include "src/services/NotificationService.h"
 #include "src/services/Review.h"
@@ -33,6 +35,15 @@ int main()
     cout << string(60, '#') << endl;
 
     LibrarySystem system;
+
+    // ========================================
+    // CLEAN UP OLD DATA FILES (Fresh Start)
+    // ========================================
+    testSeparator("CLEARING OLD DATA FOR FRESH TEST");
+    system.users.clear();
+    system.admins.clear();
+    system.resources.clear();
+    cout << "[PASS] Old data cleared - starting fresh test" << endl;
 
     // ========================================
     // TEST 1: USER CREATION & MANAGEMENT
@@ -89,20 +100,37 @@ int main()
     cout << "[PASS] Created 6 resources (4 physical books + 2 budget books)" << endl;
 
     // ========================================
-    // TEST 4: MEMBERSHIP ASSIGNMENT
+    // TEST 4: MEMBERSHIP ASSIGNMENT (3-TIER SYSTEM)
     // ========================================
-    testSeparator("TEST 4: MEMBERSHIP ASSIGNMENT");
+    testSeparator("TEST 4: MEMBERSHIP ASSIGNMENT (3-TIER SYSTEM)");
 
-    u1->setMembership(new FrequentReaderMembership());
-    u2->setMembership(new FrequentReaderMembership());
+    u1->setMembership(new DeluxeMembership());
+    u2->setMembership(new ExtraMembership());
     u3->setMembership(new NormalMembership());
     u4->setMembership(new NormalMembership());
     
     cout << "[PASS] Assigned memberships:" << endl;
-    cout << "  - u1 (Ali): Frequent Reader" << endl;
-    cout << "  - u2 (Sara): Frequent Reader" << endl;
-    cout << "  - u3 (Hassan): Normal" << endl;
-    cout << "  - u4 (Fatima): Normal" << endl;
+    cout << "  - u1 (Ali): Deluxe ($20/month)" << endl;
+    cout << "  - u2 (Sara): Extra ($10/month)" << endl;
+    cout << "  - u3 (Hassan): Essential (Free)" << endl;
+    cout << "  - u4 (Fatima): Essential (Free)" << endl;
+
+    // ========================================
+    // TEST 4B: USER SELECTS OWN TIER
+    // ========================================
+    testSeparator("TEST 4B: USER SELECTS OWN TIER");
+    u3->showMembershipOptions();
+    u3->changeMembershipTier(2);
+    u3->displayMembershipDetails();
+    cout << "[PASS] User 3 selected Extra membership successfully" << endl;
+
+    // ========================================
+    // TEST 4C: ADMIN ASSIGNS USER TIER
+    // ========================================
+    testSeparator("TEST 4C: ADMIN ASSIGNS USER TIER");
+    a1->assignMembershipTier(4, 3, system);
+    u4->displayMembershipDetails();
+    cout << "[PASS] Admin assigned Deluxe membership to User 4 successfully" << endl;
 
     // ========================================
     // TEST 5: BORROW OPERATIONS
@@ -156,6 +184,32 @@ int main()
     u2->earnpoints(75);
     u3->earnpoints(50);
     cout << "[PASS] Loyalty points earned and added" << endl;
+
+    // ========================================
+    // TEST 8B: LOYALTY POINTS REDEMPTION
+    // ========================================
+    testSeparator("TEST 8B: LOYALTY POINTS REDEMPTION");
+
+    cout << "\nUser 1 Loyalty Summary:" << endl;
+    u1->displayLoyaltySummary();
+    
+    cout << "\nAttempting to redeem 100 points for discount..." << endl;
+    u1->redeemPointsForDiscount(100);
+    cout << "New Balance: Rs." << u1->getAccountBalance() << endl;
+
+    // ========================================
+    // TEST 8C: MEMBERSHIP DETAILS
+    // ========================================
+    testSeparator("TEST 8C: MEMBERSHIP TIER DETAILS");
+
+    cout << "\n--- User 1 (Deluxe) ---" << endl;
+    u1->displayMembershipDetails();
+
+    cout << "\n--- User 2 (Extra) ---" << endl;
+    u2->displayMembershipDetails();
+
+    cout << "\n--- User 3 (Essential) ---" << endl;
+    u3->displayMembershipDetails();
 
     // ========================================
     // TEST 9: DISPLAY ALL USERS
@@ -319,6 +373,12 @@ int main()
          << string(60, '#') << endl;
     cout << "#" << string(15, ' ') << "ALL TESTS COMPLETED SUCCESSFULLY!" << string(10, ' ') << "#" << endl;
     cout << string(60, '#') << endl;
+
+    // Save all data to files
+    cout << "\n" << string(50, '=') << endl;
+    cout << "SAVING DATA TO FILES..." << endl;
+    cout << string(50, '=') << endl;
+    system.saveData();
 
     return 0;
 }

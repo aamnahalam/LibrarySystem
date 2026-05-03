@@ -1,27 +1,27 @@
-#include "FrequentReaderMembership.h"
+#include "ExtraMembership.h"
 #include <iostream>
 using namespace std;
 
-FrequentReaderMembership::FrequentReaderMembership() : Membership("Extra")
+ExtraMembership::ExtraMembership() : Membership("Extra")
 {
 }
 
-int FrequentReaderMembership::getMaxBorrowLimit() const
+int ExtraMembership::getMaxBorrowLimit() const
 {
-    return 5; // Extra tier: borrow up to 5 books
+    return 5; // Can borrow up to 5 books
 }
 
-double FrequentReaderMembership::getFineDiscount() const
+double ExtraMembership::getFineDiscount() const
 {
     return 0.25; // 25% discount on fines
 }
 
-double FrequentReaderMembership::getMonthlyPrice() const
+double ExtraMembership::getMonthlyPrice() const
 {
     return 10.0; // $10 per month
 }
 
-string FrequentReaderMembership::getPerks() const
+string ExtraMembership::getPerks() const
 {
     return "- Borrow up to 5 books\n"
            "  - 25% discount on all fines\n"
@@ -29,11 +29,10 @@ string FrequentReaderMembership::getPerks() const
            "  - Early access to new arrivals";
 }
 
-void FrequentReaderMembership::displayDetails() const
+void ExtraMembership::displayDetails() const
 {
     cout << "\n=== EXTRA MEMBERSHIP ($10/month) ===" << endl;
     cout << "Max Books: " << getMaxBorrowLimit() << endl;
     cout << "Fine Discount: " << (getFineDiscount() * 100) << "%" << endl;
-    cout << "Monthly Cost: $" << getMonthlyPrice() << endl;
     cout << "Perks:\n" << getPerks() << endl;
 }

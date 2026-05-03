@@ -23,6 +23,12 @@ public:
     // Pure virtual function to get Fine Discount:
     virtual double getFineDiscount() const = 0;
 
+    // Pure virtual function to get Monthly Price:
+    virtual double getMonthlyPrice() const = 0;
+
+    // Pure virtual function to get Membership Perks:
+    virtual string getPerks() const = 0;
+
     // Pure virtual function to Display Details:
     virtual void displayDetails() const = 0;
 

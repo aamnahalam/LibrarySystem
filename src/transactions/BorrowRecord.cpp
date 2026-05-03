@@ -3,9 +3,10 @@
 #include <iostream>
 using namespace std;
 
-BorrowRecord::BorrowRecord(User *user, string resourceName, string borrowDate, string dueDate)
+BorrowRecord::BorrowRecord(User *user, int resourceID, string resourceName, string borrowDate, string dueDate)
 {
     this->user = user;
+    this->resourceID = resourceID;
     this->resourceName = resourceName;
     this->borrowDate = borrowDate;
     this->dueDate = dueDate;
@@ -23,6 +24,11 @@ bool BorrowRecord::getReturnStatus() const
     return isReturned;
 }
 
+int BorrowRecord::getResourceID() const
+{
+    return resourceID;
+}
+
 string BorrowRecord::getResourceName() const
 {
     return resourceName;
@@ -36,6 +42,11 @@ string BorrowRecord::getBorrowDate() const
 string BorrowRecord::getDueDate() const
 {
     return dueDate;
+}
+
+string BorrowRecord::getReturnDate() const
+{
+    return returnDate;
 }
 
 void BorrowRecord::showRecord() {

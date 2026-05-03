@@ -2,8 +2,14 @@
 #include "../users/user.h"
 #include "../users/admin.h"
 #include "../resources/Resource.h"
+#include "../resources/PrimePickBook.h"
+#include "../resources/ClassicShelfBook.h"
+#include "../resources/BudgetPickBook.h"
+#include "../Membership/Membership.h"
+#include "../Membership/NormalMembership.h"
+#include "../Membership/ExtraMembership.h"
+#include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
-#include "../users/admin.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -200,7 +206,17 @@ void LibrarySystem::saveData()
     }
     for (auto &u : users)
     {
-        userFile << u->getID() << "|" << u->getFullName() << "|" << u->getEmail() << "|" << u->getPassword() << "|" << u->getAccountBalance() << "\n";
+        string membershipType = "Essential";
+        if (u->membership)
+            membershipType = u->membership->getLevelName();
+
+        userFile << u->getID() << "|"
+                 << u->getFullName() << "|"
+                 << u->getEmail() << "|"
+                 << u->getPassword() << "|"
+                 << u->getAccountBalance() << "|"
+                 << membershipType << "|"
+                 << u->getLoyaltyPoints() << "\n";
     }
     userFile.close();
     cout << "Users saved to users.txt" << endl;
@@ -214,8 +230,18 @@ void LibrarySystem::saveData()
     }
     for (auto &r : resources)
     {
+        string typeName = "Unknown";
+        if (dynamic_cast<PrimePickBook *>(r))
+            typeName = "PrimePick";
+        else if (dynamic_cast<ClassicShelfBook *>(r))
+            typeName = "ClassicShelf";
+        else if (dynamic_cast<BudgetPickBook *>(r))
+            typeName = "BudgetPick";
+
         resFile << r->getResourceID() << "|"
+                << typeName << "|"
                 << r->getTitle() << "|"
+                << r->getAuthor() << "|"
                 << r->getCategory() << "|"
                 << (r->getAvailability() ? "1" : "0") << "|"
                 << r->getRating() << "|"
@@ -236,10 +262,12 @@ void LibrarySystem::saveData()
         for (const auto &record : u->getBorrowHistory())
         {
             histFile << u->getID() << "|"
+                     << record.getResourceID() << "|"
                      << record.getResourceName() << "|"
                      << record.getBorrowDate() << "|"
                      << record.getDueDate() << "|"
-                     << (record.getReturnStatus() ? "1" : "0") << "\n";
+                     << (record.getReturnStatus() ? "1" : "0") << "|"
+                     << record.getReturnDate() << "\n";
         }
     }
     histFile.close();
@@ -251,26 +279,148 @@ void LibrarySystem::loadData() {
     ifstream userFile("users.txt");
     if (!userFile.is_open()) {
         cout << "No saved user data found. Starting fresh." << endl;
-        return;
-    }
-    string line;
-    while (getline(userFile, line)) {
-        if (line.empty()) continue;
-        stringstream ss(line);
-        string token;
-        vector<string> parts;
-        while (getline(ss, token, '|')) parts.push_back(token);
-        if (parts.size() < 5) continue;
-        int    id      = stoi(parts[0]);
-        string name    = parts[1];
-        string email   = parts[2];
-        string pass    = parts[3];
-        double balance = stod(parts[4]);
-        string firstName = name, lastName = "";
-        size_t sp = name.find(' ');
-        if (sp != string::npos) { firstName = name.substr(0, sp); lastName = name.substr(sp + 1); }
-        users.push_back(new User(id, firstName, lastName, email, pass, balance));
+    } else {
+        string line;
+        while (getline(userFile, line)) {
+            if (line.empty()) continue;
+            stringstream ss(line);
+            string token;
+            vector<string> parts;
+            while (getline(ss, token, '|')) parts.push_back(token);
+            if (parts.size() < 5) continue;
+
+            int    id      = stoi(parts[0]);
+            string name    = parts[1];
+            string email   = parts[2];
+            string pass    = parts[3];
+            double balance = stod(parts[4]);
+            string membershipType = "Essential";
+            int loyaltyPoints = 0;
+            if (parts.size() >= 7) {
+                membershipType = parts[5];
+                loyaltyPoints = stoi(parts[6]);
+            }
+
+            string firstName = name, lastName = "";
+            size_t sp = name.find(' ');
+            if (sp != string::npos) { firstName = name.substr(0, sp); lastName = name.substr(sp + 1); }
+
+            User *user = new User(id, firstName, lastName, email, pass, balance);
+            if (membershipType == "Deluxe")
+                user->setMembership(new DeluxeMembership());
+            else if (membershipType == "Extra")
+                user->setMembership(new ExtraMembership());
+            else
+                user->setMembership(new NormalMembership());
+            for (int i = 0; i < loyaltyPoints; ++i) user->earnpoints(1);
+            users.push_back(user);
+        }
     }
     userFile.close();
     cout << "User data loaded from users.txt" << endl;
+
+    // Load Resources
+    ifstream resFile("resources.txt");
+    if (!resFile.is_open())
+    {
+        cout << "No saved resource data found. Continuing." << endl;
+    }
+    else
+    {
+        string line;
+        while (getline(resFile, line))
+        {
+            if (line.empty()) continue;
+            stringstream ss(line);
+            string token;
+            vector<string> parts;
+            while (getline(ss, token, '|')) parts.push_back(token);
+            if (parts.size() < 8) continue;
+
+            int id = stoi(parts[0]);
+            string type = parts[1];
+            string title = parts[2];
+            string author = parts[3];
+            string category = parts[4];
+            bool available = parts[5] == "1";
+            double rating = stod(parts[6]);
+            int borrowCount = stoi(parts[7]);
+
+            Resource *res = nullptr;
+            if (type == "PrimePick")
+                res = new PrimePickBook(id, title, author, category);
+            else if (type == "ClassicShelf")
+                res = new ClassicShelfBook(id, title, author, category);
+            else if (type == "BudgetPick")
+                res = new BudgetPickBook(id, title, author, category);
+            else
+                continue;
+
+            res->isAvailable = available;
+            res->rating = rating;
+            res->borrowCount = borrowCount;
+            resources.push_back(res);
+        }
+        resFile.close();
+        cout << "Resource data loaded from resources.txt" << endl;
+    }
+
+    // Load Borrow History
+    ifstream histFile("borrow_history.txt");
+    if (!histFile.is_open())
+    {
+        cout << "No saved borrow history found. Continuing." << endl;
+        return;
+    }
+
+    string histLine;
+    while (getline(histFile, histLine))
+    {
+        if (histLine.empty()) continue;
+        stringstream ss(histLine);
+        string token;
+        vector<string> parts;
+        while (getline(ss, token, '|')) parts.push_back(token);
+        if (parts.size() < 7) continue;
+
+        int userID = stoi(parts[0]);
+        int resourceID = stoi(parts[1]);
+        string resourceName = parts[2];
+        string borrowDate = parts[3];
+        string dueDate = parts[4];
+        bool returned = parts[5] == "1";
+        string returnDate = parts[6];
+
+        User *user = nullptr;
+        for (auto &u : users)
+        {
+            if (u->getID() == userID)
+            {
+                user = u;
+                break;
+            }
+        }
+        if (!user) continue;
+
+        BorrowRecord record(user, resourceID, resourceName, borrowDate, dueDate);
+        if (returned)
+            record.markAsReturned(returnDate);
+
+        user->borrowHistory.push_back(record);
+
+        if (!returned)
+        {
+            for (auto &res : resources)
+            {
+                if (res->getResourceID() == resourceID)
+                {
+                    res->updateAvailability(false);
+                    user->borrowedResources.push_back(res);
+                    break;
+                }
+            }
+        }
+    }
+    histFile.close();
+    cout << "Borrow history loaded from borrow_history.txt" << endl;
 }

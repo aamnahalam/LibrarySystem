@@ -12,11 +12,13 @@ class BorrowRecord;
 
 class LibrarySystem
 {
-private:
+public:
     vector<User *> users;
     vector<Admin *> admins;
     vector<Resource *> resources;
     vector<BorrowRecord *> borrowRecords;
+
+private:
     User *currentUser;
 
 public:

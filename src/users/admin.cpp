@@ -5,6 +5,8 @@
 #include "../Membership/Membership.h"
 #include "../Membership/NormalMembership.h"
 #include "../Membership/FrequentReaderMembership.h"
+#include "../Membership/ExtraMembership.h"
+#include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
 #include <iostream>
 using namespace std;
@@ -141,15 +143,47 @@ void Admin::assignCardType(int userID, LibrarySystem& system) {
     for (auto& u : system.users) {
         if (u && u->getID() == userID) {
             int totalBorrows = (int)u->getBorrowHistory().size();
-            if (totalBorrows >= 10) {
-                u->setMembership(new FrequentReaderMembership());
-                cout << "Frequent Reader Membership assigned to " << u->getFullName()
+            if (totalBorrows >= 20) {
+                u->setMembership(new DeluxeMembership());
+                cout << "Deluxe Membership assigned to " << u->getFullName()
+                     << " (" << totalBorrows << " borrows)" << endl;
+            } else if (totalBorrows >= 10) {
+                u->setMembership(new ExtraMembership());
+                cout << "Extra Membership assigned to " << u->getFullName()
                      << " (" << totalBorrows << " borrows)" << endl;
             } else {
                 u->setMembership(new NormalMembership());
-                cout << "Normal Membership assigned to " << u->getFullName()
+                cout << "Essential Membership assigned to " << u->getFullName()
                      << " (" << totalBorrows << " borrows)" << endl;
             }
+            return;
+        }
+    }
+    cout << "User Not Found." << endl;
+}
+
+void Admin::assignMembershipTier(int userID, int tier, LibrarySystem& system) {
+    for (auto& u : system.users) {
+        if (u && u->getID() == userID) {
+            Membership* m = nullptr;
+            switch (tier) {
+                case 1:
+                    m = new NormalMembership();
+                    cout << "Admin assigned Essential membership to " << u->getFullName() << endl;
+                    break;
+                case 2:
+                    m = new ExtraMembership();
+                    cout << "Admin assigned Extra membership to " << u->getFullName() << endl;
+                    break;
+                case 3:
+                    m = new DeluxeMembership();
+                    cout << "Admin assigned Deluxe membership to " << u->getFullName() << endl;
+                    break;
+                default:
+                    cout << "Invalid membership tier chosen." << endl;
+                    return;
+            }
+            u->setMembership(m);
             return;
         }
     }
