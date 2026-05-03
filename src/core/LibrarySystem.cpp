@@ -204,19 +204,20 @@ void LibrarySystem::saveData()
         cout << "Error: Cannot open users.txt" << endl;
         return;
     }
+    userFile << "ID | Name | Email | Password | Balance | Membership | LoyaltyPoints" << endl;
     for (auto &u : users)
     {
         string membershipType = "Essential";
         if (u->membership)
             membershipType = u->membership->getLevelName();
 
-        userFile << u->getID() << "|"
-                 << u->getFullName() << "|"
-                 << u->getEmail() << "|"
-                 << u->getPassword() << "|"
-                 << u->getAccountBalance() << "|"
-                 << membershipType << "|"
-                 << u->getLoyaltyPoints() << "\n";
+        userFile << u->getID() << " | "
+                 << u->getFullName() << " | "
+                 << u->getEmail() << " | "
+                 << u->getPassword() << " | "
+                 << u->getAccountBalance() << " | "
+                 << membershipType << " | "
+                 << u->getLoyaltyPoints() << endl;
     }
     userFile.close();
     cout << "Users saved to users.txt" << endl;
@@ -228,6 +229,7 @@ void LibrarySystem::saveData()
         cout << "Error: Cannot open resources.txt" << endl;
         return;
     }
+    resFile << "ID | Type | Title | Author | Category | Available | Rating | BorrowCount" << endl;
     for (auto &r : resources)
     {
         string typeName = "Unknown";
@@ -238,14 +240,14 @@ void LibrarySystem::saveData()
         else if (dynamic_cast<BudgetPickBook *>(r))
             typeName = "BudgetPick";
 
-        resFile << r->getResourceID() << "|"
-                << typeName << "|"
-                << r->getTitle() << "|"
-                << r->getAuthor() << "|"
-                << r->getCategory() << "|"
-                << (r->getAvailability() ? "1" : "0") << "|"
-                << r->getRating() << "|"
-                << r->getBorrowCount() << "\n";
+        resFile << r->getResourceID() << " | "
+                << typeName << " | "
+                << r->getTitle() << " | "
+                << r->getAuthor() << " | "
+                << r->getCategory() << " | "
+                << (r->getAvailability() ? "1" : "0") << " | "
+                << r->getRating() << " | "
+                << r->getBorrowCount() << endl;
     }
     resFile.close();
     cout << "Resources saved to resources.txt" << endl;
@@ -257,17 +259,18 @@ void LibrarySystem::saveData()
         cout << "Error: Cannot open borrow_history.txt" << endl;
         return;
     }
+    histFile << "UserID | ResourceID | ResourceName | BorrowDate | DueDate | Returned | ReturnDate" << endl;
     for (auto &u : users)
     {
         for (const auto &record : u->getBorrowHistory())
         {
-            histFile << u->getID() << "|"
-                     << record.getResourceID() << "|"
-                     << record.getResourceName() << "|"
-                     << record.getBorrowDate() << "|"
-                     << record.getDueDate() << "|"
-                     << (record.getReturnStatus() ? "1" : "0") << "|"
-                     << record.getReturnDate() << "\n";
+            histFile << u->getID() << " | "
+                     << record.getResourceID() << " | "
+                     << record.getResourceName() << " | "
+                     << record.getBorrowDate() << " | "
+                     << record.getDueDate() << " | "
+                     << (record.getReturnStatus() ? "1" : "0") << " | "
+                     << record.getReturnDate() << endl;
         }
     }
     histFile.close();
@@ -281,25 +284,34 @@ void LibrarySystem::loadData() {
         cout << "No saved user data found. Starting fresh." << endl;
     } else {
         string line;
+        bool isFirstLine = true;
         while (getline(userFile, line)) {
+            if (isFirstLine && line.find("ID |") == 0) {
+                isFirstLine = false;
+                continue;
+            }
             if (line.empty()) continue;
             stringstream ss(line);
             string token;
             vector<string> parts;
-            while (getline(ss, token, '|')) parts.push_back(token);
-            if (parts.size() < 5) continue;
+            while (getline(ss, token, '|')) {
+                // Trim spaces around the token
+                size_t start = token.find_first_not_of(" \t");
+                size_t end = token.find_last_not_of(" \t");
+                if (start != string::npos && end != string::npos) {
+                    token = token.substr(start, end - start + 1);
+                }
+                parts.push_back(token);
+            }
+            if (parts.size() < 7) continue;
 
             int    id      = stoi(parts[0]);
             string name    = parts[1];
             string email   = parts[2];
             string pass    = parts[3];
             double balance = stod(parts[4]);
-            string membershipType = "Essential";
-            int loyaltyPoints = 0;
-            if (parts.size() >= 7) {
-                membershipType = parts[5];
-                loyaltyPoints = stoi(parts[6]);
-            }
+            string membershipType = parts[5];
+            int loyaltyPoints = stoi(parts[6]);
 
             string firstName = name, lastName = "";
             size_t sp = name.find(' ');
@@ -328,13 +340,25 @@ void LibrarySystem::loadData() {
     else
     {
         string line;
+        bool isFirstLine = true;
         while (getline(resFile, line))
         {
+            if (isFirstLine && line.find("ID |") == 0) {
+                isFirstLine = false;
+                continue;
+            }
             if (line.empty()) continue;
             stringstream ss(line);
             string token;
             vector<string> parts;
-            while (getline(ss, token, '|')) parts.push_back(token);
+            while (getline(ss, token, '|')) {
+                size_t start = token.find_first_not_of(" \t");
+                size_t end = token.find_last_not_of(" \t");
+                if (start != string::npos && end != string::npos) {
+                    token = token.substr(start, end - start + 1);
+                }
+                parts.push_back(token);
+            }
             if (parts.size() < 8) continue;
 
             int id = stoi(parts[0]);
@@ -374,13 +398,25 @@ void LibrarySystem::loadData() {
     }
 
     string histLine;
+    bool isFirstLine = true;
     while (getline(histFile, histLine))
     {
+        if (isFirstLine && histLine.find("UserID |") == 0) {
+            isFirstLine = false;
+            continue;
+        }
         if (histLine.empty()) continue;
         stringstream ss(histLine);
         string token;
         vector<string> parts;
-        while (getline(ss, token, '|')) parts.push_back(token);
+        while (getline(ss, token, '|')) {
+            size_t start = token.find_first_not_of(" \t");
+            size_t end = token.find_last_not_of(" \t");
+            if (start != string::npos && end != string::npos) {
+                token = token.substr(start, end - start + 1);
+            }
+            parts.push_back(token);
+        }
         if (parts.size() < 7) continue;
 
         int userID = stoi(parts[0]);
