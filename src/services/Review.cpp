@@ -1,6 +1,9 @@
 #include "Review.h"
-#include "user.h"
+#include "../users/user.h"
 #include <string>
+#include<iostream>
+using namespace std;
+
 // Definition of Constructor:
 Review::Review(int ratingValue, const string &reviewText, User *user) : ratingValue(ratingValue), reviewText(reviewText), user(user), isHidden(false)
 {

@@ -6,8 +6,8 @@
 class NormalMembership : public Membership {
 
 private:
-    int borrowLimit;        // ✅ MUST exist
-    int borrowedCount;      // ✅ MUST exist
+    int borrowLimit;        //  MUST exist
+    int borrowedCount;      //  MUST exist
 
 public:
     NormalMembership();

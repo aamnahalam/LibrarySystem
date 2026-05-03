@@ -5,6 +5,7 @@
 using namespace std;
 
 class Admin; // forward declaration
+class LibrarySystem; // forward declaration
 
 class Resource
 {
@@ -27,17 +28,18 @@ public:
     virtual void displayDetails() = 0;
     virtual ~Resource();
     void updateAvailability(bool status);
-
     string getTitle() const;
     string getAuthor() const;
 
     virtual int getBorrowLimit() = 0;
     virtual double getFineRate() = 0;
-
+    
     void addRating(int value);
+    void incrementBorrowCount();
     bool getAvailability();
     string getCategory() const;
     double getReviewScore() const;
+    double getRating() const;
     int getBorrowCount() const;
     bool getIsNewArrival() const;
 

@@ -20,7 +20,7 @@ public:
     BorrowRecord(User* user, string resourceName, string borrowDate, string dueDate);
 
     void markAsReturned(string returnDate);
-    bool getReturnStatus();
+    bool getReturnStatus()const;
 
     string getResourceName() const;
     string getBorrowDate() const;

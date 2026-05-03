@@ -5,9 +5,10 @@
 #include <string>
 using namespace std;
 
-class BorrowLimitExceededException : public LibraryException {
+class BorrowLimitExceededException : public LibraryException
+{
 public:
-    BorrowLimitExceededException(string message);
+    BorrowLimitExceededException(string message) : LibraryException(message) {}
 };
 
 #endif
