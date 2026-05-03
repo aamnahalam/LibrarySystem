@@ -1,11 +1,11 @@
 #include "admin.h"
-#include "LibrarySystem.h"
+#include "../core/LibrarySystem.h"
 #include "user.h"
-#include "Resource.h"
-#include "Membership.h"
-#include "NormalMembership.h"
-#include "FrequentReaderMembership.h"
-#include "BorrowRecord.h"
+#include "../resources/Resource.h"
+#include "../Membership/Membership.h"
+#include "../Membership/NormalMembership.h"
+#include "../Membership/FrequentReaderMembership.h"
+#include "../transactions/BorrowRecord.h"
 #include <iostream>
 using namespace std;
 
@@ -24,7 +24,7 @@ void Admin::addResources(Resource *r, LibrarySystem& system) {
     system.resources.push_back(r);
     cout << " Resource Added Successfully. " << endl;
 }
-// REMVE RESOURCE
+// REMOVE RESOURCE
 bool Admin::removeResources(int resourceID, LibrarySystem& system) {
     for (auto it = system.resources.begin(); it != system.resources.end(); ++it) {
         if ((*it)->getResourceID() == resourceID) {
@@ -140,26 +140,22 @@ void Admin::approveDigitalUpload(int resourceID, LibrarySystem& system) {
 
 // ASSIGN MEMBERSHIP 
 void Admin::assignCardType(int userID, LibrarySystem& system) {
-    for (auto u : system.users) {
+    for (auto& u : system.users) {
         if (u && u->getID() == userID) {
-
-            if (u->getAccountBalance() > 100) {
+            int totalBorrows = (int)u->getBorrowHistory().size();
+            if (totalBorrows >= 10) {
                 u->setMembership(new FrequentReaderMembership());
-                cout << " Gold Card Assigned Successfully. " << endl;
-            } 
-            else if (u->getAccountBalance() > 50) {
-                u->setMembership(new FrequentReaderMembership());
-                cout << " Silver Card Assigned Successfully. " << endl;
-            } 
-            else {
+                cout << "Frequent Reader Membership assigned to " << u->getFullName()
+                     << " (" << totalBorrows << " borrows)" << endl;
+            } else {
                 u->setMembership(new NormalMembership());
-                cout << " Bronze Card Assigned Successfully. " << endl;
+                cout << "Normal Membership assigned to " << u->getFullName()
+                     << " (" << totalBorrows << " borrows)" << endl;
             }
-
             return;
         }
     }
-    cout << " User Not Found. " << endl;
+    cout << "User Not Found." << endl;
 }
 
 // DISPLAY ADMIN INFO

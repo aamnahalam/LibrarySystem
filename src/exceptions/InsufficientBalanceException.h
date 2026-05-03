@@ -6,7 +6,8 @@
 
 class InsufficientBalanceException : public LibraryException {
 public:
-    InsufficientBalanceException(string message);
+    
+    InsufficientBalanceException(string message) : LibraryException(message) {}
 };
 
 #endif

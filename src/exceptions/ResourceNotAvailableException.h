@@ -6,7 +6,6 @@
 
 class ResourceNotAvailableException : public LibraryException {
 public:
-    ResourceNotAvailableException(string message);
+    ResourceNotAvailableException(string message) : LibraryException(message) {}
 };
-
 #endif

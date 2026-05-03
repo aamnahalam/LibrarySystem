@@ -1,93 +1,117 @@
 #include "LibrarySystem.h"
-#include "User.h"
-#include "Resource.h"
-#include "BorrowRecord.h"
+#include "../users/user.h"
 #include "../users/admin.h"
-
+#include "../resources/Resource.h"
+#include "../transactions/BorrowRecord.h"
+#include "../users/admin.h"
 #include <algorithm>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+using namespace std;
 
-LibrarySystem::LibrarySystem() {
+LibrarySystem::LibrarySystem()
+{
     currentUser = nullptr;
 }
 
-LibrarySystem::~LibrarySystem() {
-    for (auto user : users) {
+LibrarySystem::~LibrarySystem()
+{
+    for (auto user : users)
+    {
         delete user;
     }
-    for (auto admin : admins) {
+    for (auto admin : admins)
+    {
         delete admin;
     }
-    for (auto resource : resources) {
+    for (auto resource : resources)
+    {
         delete resource;
     }
-    for (auto record : borrowRecords) {
+    for (auto record : borrowRecords)
+    {
         delete record;
     }
 }
 
-void LibrarySystem::addUser(User* user) {
-    if (user) {
-        users.push_back(user);
-    }
+void LibrarySystem::addUser(User *u)
+{
+    users.push_back(u);
+    cout << "User added: " << u->getFullName() << endl;
 }
 
-void LibrarySystem::addAdmin(Admin* admin) {
-    if (admin) {
-        admins.push_back(admin);
-    }
+void LibrarySystem::addAdmin(Admin *a)
+{
+    admins.push_back(a);
+    cout << "Admin added: " << a->getFullName() << endl;
 }
 
 // Authenticate user
-bool LibrarySystem::authenticate(std::string email, std::string password) {
-    for (auto user : users) {
-        if (user->getEmail() == email && user->getPassword() == password) {
+bool LibrarySystem::authenticate(string email, string password)
+{
+    for (auto &user : users)
+    {
+        if (user->getEmail() == email && user->getPassword() == password)
+        {
             currentUser = user;
+            cout << "Login Successful. Welcome, " << user->getFullName() << endl;
             return true;
         }
     }
+    cout << "Login Failed. Invalid email or password." << endl;
     return false;
 }
 
-void LibrarySystem::showAllUsers() const {
-    for (const auto user : users) {
-        if (user) {
-            user->displayInfo();
-        }
+void LibrarySystem::showAllUsers() const
+{
+    if (users.empty())
+    {
+        cout << "No users registered." << endl;
+        return;
     }
+    for (auto &u : users)
+        u->displayInfo();
 }
 
-void LibrarySystem::showAllAdmins() const {
-    for (const auto admin : admins) {
-        if (admin) {
-           admin->displayInfo();
-        }
+void LibrarySystem::showAllAdmins() const
+{
+    if (admins.empty())
+    {
+        cout << "No admins registered." << endl;
+        return;
     }
+    for (auto &a : admins)
+        a->displayInfo();
 }
-
 // Logout
-void LibrarySystem::logout() {
+void LibrarySystem::logout()
+{
+    if (currentUser)
+        cout << currentUser->getFullName() << " logged out." << endl;
     currentUser = nullptr;
 }
 
 // Search resource by keyword
-std::vector<Resource*> LibrarySystem::searchResource(std::string keyword) {
-    std::vector<Resource*> result;
-
-    for (auto r : resources) {
-        if (r->getTitle().find(keyword) != std::string::npos) {
+vector<Resource *> LibrarySystem::searchResource(string keyword)
+{
+    vector<Resource *> result;
+    for (auto r : resources)
+        if (r->getTitle().find(keyword) != string::npos ||
+            r->getCategory().find(keyword) != string::npos)
             result.push_back(r);
-        }
-    }
-
     return result;
 }
 
 // Filter by category
-std::vector<Resource*> LibrarySystem::filterResources(std::string category) {
-    std::vector<Resource*> result;
+vector<Resource *> LibrarySystem::filterResources(string category)
+{
+    vector<Resource *> result;
 
-    for (auto r : resources) {
-        if (r->getCategory() == category) {
+    for (auto r : resources)
+    {
+        if (r->getCategory() == category)
+        {
             result.push_back(r);
         }
     }
@@ -96,11 +120,14 @@ std::vector<Resource*> LibrarySystem::filterResources(std::string category) {
 }
 
 // Filter available resources
-std::vector<Resource*> LibrarySystem::filterByAvailability() {
-    std::vector<Resource*> result;
+vector<Resource *> LibrarySystem::filterByAvailability()
+{
+    vector<Resource *> result;
 
-    for (auto r : resources) {
-        if (r->getAvailability()) {
+    for (auto r : resources)
+    {
+        if (r->getAvailability())
+        {
             result.push_back(r);
         }
     }
@@ -109,11 +136,14 @@ std::vector<Resource*> LibrarySystem::filterByAvailability() {
 }
 
 // Filter new arrivals
-std::vector<Resource*> LibrarySystem::filterByNewArrivals() {
-    std::vector<Resource*> result;
+vector<Resource *> LibrarySystem::filterByNewArrivals()
+{
+    vector<Resource *> result;
 
-    for (auto r : resources) {
-        if (r->getIsNewArrival()) {
+    for (auto r : resources)
+    {
+        if (r->getIsNewArrival())
+        {
             result.push_back(r);
         }
     }
@@ -122,46 +152,125 @@ std::vector<Resource*> LibrarySystem::filterByNewArrivals() {
 }
 
 // Filter most borrowed
-std::vector<Resource*> LibrarySystem::filterByMostBorrowed() {
-    std::vector<Resource*> result = resources;
+vector<Resource *> LibrarySystem::filterByMostBorrowed()
+{
+    vector<Resource *> result = resources;
 
-    std::sort(result.begin(), result.end(), [](Resource* a, Resource* b) {
-        return a->getBorrowCount() > b->getBorrowCount();
-    });
+    sort(result.begin(), result.end(), [](Resource *a, Resource *b)
+         { return a->getBorrowCount() > b->getBorrowCount(); });
 
     return result;
 }
 
 // Filter by rating
-std::vector<Resource*> LibrarySystem::filterByRating() {
-    std::vector<Resource*> result = resources;
+vector<Resource *> LibrarySystem::filterByRating()
+{
+    vector<Resource *> result = resources;
 
-    std::sort(result.begin(), result.end(), [](Resource* a, Resource* b) {
-        return a->getReviewScore() > b->getReviewScore();
-    });
+    sort(result.begin(), result.end(), [](Resource *a, Resource *b)
+         { return a->getReviewScore() > b->getReviewScore(); });
 
     return result;
 }
 
 // Filter by user preference
-std::vector<Resource*> LibrarySystem::filterByUserPreference(User* u) {
-    std::vector<Resource*> result;
-
-    for (auto r : resources) {
-        if (r->getCategory() == u->getPreferredCategory()) {
+vector<Resource *> LibrarySystem::filterByUserPreference(User *u)
+{
+    vector<Resource *> result;
+    string pref = u->getPreferredCategory();
+    if (pref.empty())
+        return result;
+    for (auto r : resources)
+        if (r->getCategory() == pref)
             result.push_back(r);
-        }
-    }
-
     return result;
 }
 
-// Save data (placeholder)
-void LibrarySystem::saveData() {
-    // Implement file/database saving logic
+// FILE HANDLING:
+
+// Save data
+void LibrarySystem::saveData()
+{
+    // Save Users
+    ofstream userFile("users.txt");
+    if (!userFile.is_open())
+    {
+        cout << "Error: Cannot open users.txt" << endl;
+        return;
+    }
+    for (auto &u : users)
+    {
+        userFile << u->getID() << "|" << u->getFullName() << "|" << u->getEmail() << "|" << u->getPassword() << "|" << u->getAccountBalance() << "\n";
+    }
+    userFile.close();
+    cout << "Users saved to users.txt" << endl;
+
+    // Save Resources
+    ofstream resFile("resources.txt");
+    if (!resFile.is_open())
+    {
+        cout << "Error: Cannot open resources.txt" << endl;
+        return;
+    }
+    for (auto &r : resources)
+    {
+        resFile << r->getResourceID() << "|"
+                << r->getTitle() << "|"
+                << r->getCategory() << "|"
+                << (r->getAvailability() ? "1" : "0") << "|"
+                << r->getRating() << "|"
+                << r->getBorrowCount() << "\n";
+    }
+    resFile.close();
+    cout << "Resources saved to resources.txt" << endl;
+
+    // Save Borrow History
+    ofstream histFile("borrow_history.txt");
+    if (!histFile.is_open())
+    {
+        cout << "Error: Cannot open borrow_history.txt" << endl;
+        return;
+    }
+    for (auto &u : users)
+    {
+        for (const auto &record : u->getBorrowHistory())
+        {
+            histFile << u->getID() << "|"
+                     << record.getResourceName() << "|"
+                     << record.getBorrowDate() << "|"
+                     << record.getDueDate() << "|"
+                     << (record.getReturnStatus() ? "1" : "0") << "\n";
+        }
+    }
+    histFile.close();
+    cout << "Borrow history saved to borrow_history.txt" << endl;
 }
 
-// Load data (placeholder)
+// Load data 
 void LibrarySystem::loadData() {
-    // Implement file/database loading logic
+    ifstream userFile("users.txt");
+    if (!userFile.is_open()) {
+        cout << "No saved user data found. Starting fresh." << endl;
+        return;
+    }
+    string line;
+    while (getline(userFile, line)) {
+        if (line.empty()) continue;
+        stringstream ss(line);
+        string token;
+        vector<string> parts;
+        while (getline(ss, token, '|')) parts.push_back(token);
+        if (parts.size() < 5) continue;
+        int    id      = stoi(parts[0]);
+        string name    = parts[1];
+        string email   = parts[2];
+        string pass    = parts[3];
+        double balance = stod(parts[4]);
+        string firstName = name, lastName = "";
+        size_t sp = name.find(' ');
+        if (sp != string::npos) { firstName = name.substr(0, sp); lastName = name.substr(sp + 1); }
+        users.push_back(new User(id, firstName, lastName, email, pass, balance));
+    }
+    userFile.close();
+    cout << "User data loaded from users.txt" << endl;
 }

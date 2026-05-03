@@ -2,6 +2,7 @@
 #define USER_H
 
 #include "Person.h"
+#include "../transactions/BorrowRecord.h"
 #include <vector>
 #include <string>
 
@@ -17,6 +18,8 @@ private:
     int loyaltypoints;
     int readingFrequency;
     double accountbalance;
+    string lastBorrowDate;
+    int borrowsToday;
     Membership* membership;
     vector<Resource*> borrowedResources;
     vector<BorrowRecord> borrowHistory;
@@ -36,6 +39,7 @@ public:
     void earnpoints(int points);
     void setMembership(Membership* m);
     void lock();
+    void unlock();
     // Profile & History Methods
     void viewhistory();
     void updateprofile(string firstName, string lastName, string email, string password);

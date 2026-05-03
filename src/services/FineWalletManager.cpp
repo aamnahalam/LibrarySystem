@@ -1,6 +1,7 @@
 #include "FineWalletManager.h"
-#include "LibraryException.h"
-#include "InsufficientBalanceException.h"
+#include "../users/user.h"
+#include "../exceptions/LibraryException.h"
+#include "../exceptions/InsufficientBalanceException.h"
 #include <iostream>
 #include <string>
 // Default Constructor:
@@ -19,39 +20,23 @@ double FineWalletManager::calculateFine(int daysLate, double rate)
 // Deducting fine from balance:
 bool FineWalletManager::deductFromBalance(User *user, double amount)
 {
-    if (user == nullptr)
-    {
+    if (!user)
         throw InsufficientBalanceException("Invalid user pointer");
-    }
-    if (user->getAccountBalance() >= amount)
+    if (user->getAccountBalance() >= amount && user->deductFromBalance(amount))
     {
-        bool success = user->deductFromBalance(amount);
-        if (success)
-        {
-            cout << "Successfully deducted $" << amount << " from user: " << user->getID() << endl;
-            return true;
-        }
+        cout << "Deducted $" << amount << " from user " << user->getID() << endl;
+        return true;
     }
-    // to_string() is used to convert different datatypes to string
-    throw InsufficientBalanceException("User " + to_string(user->getID()) + " has insufficient balance."
-                                                                            "Current balance: $" +
-                                       to_string(user->getAccountBalance()) + ", Required: $" + to_string(amount));
+    throw InsufficientBalanceException("User " + to_string(user->getID()) + " has insufficient balance.");
 }
 // Recharging wallet:
 void FineWalletManager::rechargeWallet(User *user, double amount)
 {
-    if (user == nullptr)
-    {
-        throw LibraryException("Invalid user pointer for recharge");
-    }
+    if (!user)
+        throw LibraryException("Invalid user pointer");
     if (amount <= 0)
-    {
         throw LibraryException("Recharge amount must be positive");
-    }
-    // Calling recharge balance of user class
     user->rechargebalance(amount);
-    cout << "Successfully recharged $" << amount << " to user" << user->getID() << endl;
-    cout << "New balance: $" << user->getAccountBalance() << endl;
 }
 // Setting fine amount:
 void FineWalletManager::setFineAmount(double amount)

@@ -7,7 +7,7 @@ FrequentReaderMembership::FrequentReaderMembership() : Membership("Frequent Read
 
 int FrequentReaderMembership::getMaxBorrowLimit() const
 {
-    return 2;
+    return 5;
 }
 double FrequentReaderMembership::getFineDiscount() const
 {
@@ -17,6 +17,6 @@ double FrequentReaderMembership::getFineDiscount() const
 void FrequentReaderMembership::displayDetails() const
 {
     cout << "Membership: Frequent Reader" << endl;
-    cout << "Borrow Limit: 2" << endl;
+    cout << "Borrow Limit: 5" << endl;
     cout << "Fine Discount: 20%" << endl;
 }

@@ -1,9 +1,10 @@
 #include "BorrowRecord.h"
-#include "user.h"
+#include "../users/user.h"
 #include <iostream>
 using namespace std;
 
-BorrowRecord::BorrowRecord(User* user, string resourceName, string borrowDate, string dueDate) {
+BorrowRecord::BorrowRecord(User *user, string resourceName, string borrowDate, string dueDate)
+{
     this->user = user;
     this->resourceName = resourceName;
     this->borrowDate = borrowDate;
@@ -11,28 +12,34 @@ BorrowRecord::BorrowRecord(User* user, string resourceName, string borrowDate, s
     this->isReturned = false;
 }
 
-void BorrowRecord::markAsReturned(string returnDate) {
+void BorrowRecord::markAsReturned(string returnDate)
+{
     this->returnDate = returnDate;
     this->isReturned = true;
 }
 
-bool BorrowRecord::getReturnStatus() {
+bool BorrowRecord::getReturnStatus() const
+{
     return isReturned;
 }
 
-string BorrowRecord::getResourceName() const {
+string BorrowRecord::getResourceName() const
+{
     return resourceName;
 }
 
-string BorrowRecord::getBorrowDate() const {
+string BorrowRecord::getBorrowDate() const
+{
     return borrowDate;
 }
 
-string BorrowRecord::getDueDate() const {
+string BorrowRecord::getDueDate() const
+{
     return dueDate;
 }
 
-void BorrowRecord::showRecord() {
+void BorrowRecord::showRecord()
+{
     cout << "User: ";
     user->displayInfo();
 
@@ -40,63 +47,77 @@ void BorrowRecord::showRecord() {
     cout << "Borrow Date: " << borrowDate << endl;
     cout << "Due Date: " << dueDate << endl;
 
-    if (isReturned) {
+    if (isReturned)
+    {
         cout << "Returned on: " << returnDate << endl;
-    } else {
+    }
+    else
+    {
         cout << "Status: Not Returned" << endl;
     }
 }
 
-bool BorrowRecord::isOverdue() const {
-    if (isReturned) return false;
-    
+bool BorrowRecord::isOverdue() const
+{
+    if (isReturned)
+        return false;
+
     // Parse due date (format: YYYY-MM-DD)
     int dueYear = stoi(dueDate.substr(0, 4));
     int dueMonth = stoi(dueDate.substr(5, 2));
     int dueDay = stoi(dueDate.substr(8, 2));
-    
+
     // Get current date
     time_t now = time(0);
-    tm* currentTime = localtime(&now);
+    tm *currentTime = localtime(&now);
     int currentYear = 1900 + currentTime->tm_year;
     int currentMonth = 1 + currentTime->tm_mon;
     int currentDay = currentTime->tm_mday;
-    
+
     // Compare dates
-    if (currentYear > dueYear) return true;
-    if (currentYear < dueYear) return false;
-    if (currentMonth > dueMonth) return true;
-    if (currentMonth < dueMonth) return false;
+    if (currentYear > dueYear)
+        return true;
+    if (currentYear < dueYear)
+        return false;
+    if (currentMonth > dueMonth)
+        return true;
+    if (currentMonth < dueMonth)
+        return false;
     return currentDay > dueDay;
 }
 
-double BorrowRecord::calculateFine() const {
-    if (isReturned) return 0.0;
-    
+double BorrowRecord::calculateFine() const
+{
+    if (isReturned)
+        return 0.0;
+
     // Parse due date
     int dueYear = stoi(dueDate.substr(0, 4));
     int dueMonth = stoi(dueDate.substr(5, 2));
     int dueDay = stoi(dueDate.substr(8, 2));
-    
+
     // Get current date
     time_t now = time(0);
-    tm* currentTime = localtime(&now);
+    tm *currentTime = localtime(&now);
     int currentYear = 1900 + currentTime->tm_year;
     int currentMonth = 1 + currentTime->tm_mon;
     int currentDay = currentTime->tm_mday;
-    
+
     // Calculate days overdue
     int daysOverdue = 0;
-    if (currentYear > dueYear) {
+    if (currentYear > dueYear)
+    {
         daysOverdue = (currentYear - dueYear) * 365;
     }
-    if (currentMonth > dueMonth) {
+    if (currentMonth > dueMonth)
+    {
         daysOverdue += (currentMonth - dueMonth) * 30;
     }
-    if (currentDay > dueDay) {
+    if (currentDay > dueDay)
+    {
         daysOverdue += (currentDay - dueDay);
     }
-    
+
     // Fine rate: $1 per day
     return daysOverdue > 0 ? daysOverdue * 1.0 : 0.0;
 }
