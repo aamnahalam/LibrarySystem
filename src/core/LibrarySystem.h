@@ -34,6 +34,12 @@ public:
     // User management
     bool authenticate(string email, string password);
     void logout();
+    User *getCurrentUser() const;
+
+    // Resource operations
+    Resource *getResourceByID(int resourceID) const;
+    bool borrowResource(int resourceID, string date);
+    double returnResource(int resourceID, string date);
 
     // Resource search & filters
     vector<Resource *> searchResource(string keyword);

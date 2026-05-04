@@ -94,6 +94,53 @@ bool LibrarySystem::authenticate(string email, string password)
     return false;
 }
 
+User *LibrarySystem::getCurrentUser() const
+{
+    return currentUser;
+}
+
+Resource *LibrarySystem::getResourceByID(int resourceID) const
+{
+    for (auto &res : resources)
+    {
+        if (res->getResourceID() == resourceID)
+            return res;
+    }
+    return nullptr;
+}
+
+bool LibrarySystem::borrowResource(int resourceID, string date)
+{
+    if (!currentUser)
+    {
+        cout << "Cannot borrow: no user signed in." << endl;
+        return false;
+    }
+    Resource *res = getResourceByID(resourceID);
+    if (!res)
+    {
+        cout << "Cannot borrow: resource not found." << endl;
+        return false;
+    }
+    return currentUser->borrowresources(res, date);
+}
+
+double LibrarySystem::returnResource(int resourceID, string date)
+{
+    if (!currentUser)
+    {
+        cout << "Cannot return: no user signed in." << endl;
+        return 0.0;
+    }
+    Resource *res = getResourceByID(resourceID);
+    if (!res)
+    {
+        cout << "Cannot return: resource not found." << endl;
+        return 0.0;
+    }
+    return currentUser->returnresources(res, date);
+}
+
 void LibrarySystem::showAllUsers() const
 {
     if (users.empty())

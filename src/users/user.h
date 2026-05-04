@@ -63,7 +63,8 @@ public:
     // Membership Upgrade
     void checkAndUpgradeMembership();
     void displayMembershipDetails() const;
-    bool changeMembershipTier(int tier);
+    bool changeMembershipTier(int tier, bool confirm = true);
+    string getMembershipChangeNotice(int tier) const;
     void showMembershipOptions() const;
     
     // Operator Overloading
