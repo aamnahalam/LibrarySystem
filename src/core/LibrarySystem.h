@@ -28,6 +28,9 @@ public:
     void addUser(User *user);
     void addAdmin(Admin *admin);
 
+    // Register new user
+    void registerUser(string firstName, string lastName, string email, string password, double initialBalance = 0.0);
+
     // User management
     bool authenticate(string email, string password);
     void logout();

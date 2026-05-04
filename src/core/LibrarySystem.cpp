@@ -53,6 +53,31 @@ void LibrarySystem::addAdmin(Admin *a)
     cout << "Admin added: " << a->getFullName() << endl;
 }
 
+void LibrarySystem::registerUser(string firstName, string lastName, string email, string password, double initialBalance)
+{
+    // Find the next available ID
+    int nextId = 1;
+    for (auto &u : users) {
+        if (u->getID() >= nextId) {
+            nextId = u->getID() + 1;
+        }
+    }
+
+    // Create new user
+    User *newUser = new User(nextId, firstName, lastName, email, password, initialBalance);
+
+    // Set default membership
+    newUser->setMembership(new NormalMembership());
+
+    // Add to users
+    users.push_back(newUser);
+
+    cout << "User registered successfully: " << newUser->getFullName() << " (ID: " << nextId << ")" << endl;
+
+    // Optionally save data
+    saveData();
+}
+
 // Authenticate user
 bool LibrarySystem::authenticate(string email, string password)
 {
