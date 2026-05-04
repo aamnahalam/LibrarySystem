@@ -35,6 +35,7 @@ public:
     bool authenticate(string email, string password);
     void logout();
     User *getCurrentUser() const;
+    bool changeUserMembershipTier(int userID, int tier, bool confirm = true);
 
     // Resource operations
     Resource *getResourceByID(int resourceID) const;
