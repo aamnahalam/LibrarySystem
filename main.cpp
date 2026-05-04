@@ -1,4 +1,11 @@
 #include <iostream>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <thread>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 #include "src/core/LibrarySystem.h"
 #include "src/users/user.h"
 #include "src/users/admin.h"
@@ -15,7 +22,183 @@
 #include "src/exceptions/BorrowLimitExceededException.h"
 #include "src/exceptions/InsufficientBalanceException.h"
 
-using namespace std;
+#pragma comment(lib, "ws2_32.lib")
+
+LibrarySystem* globalSystem;
+User* currentUser = nullptr;
+
+string readFile(const string& path) {
+    ifstream file(path);
+    if (!file) return "";
+    stringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
+
+string getContentType(const string& path) {
+    if (path.find(".html") != string::npos) return "text/html";
+    if (path.find(".css") != string::npos) return "text/css";
+    if (path.find(".js") != string::npos) return "application/javascript";
+    return "text/plain";
+}
+
+string handleRequest(const string& request) {
+    stringstream ss(request);
+    string method, path, version;
+    ss >> method >> path >> version;
+
+    if (method == "GET") {
+        if (path == "/") path = "/index.html";
+        string filePath = "web" + path;
+        string content = readFile(filePath);
+        if (content.empty()) {
+            return "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found";
+        }
+        string contentType = getContentType(filePath);
+        return "HTTP/1.1 200 OK\r\nContent-Type: " + contentType + "\r\n\r\n" + content;
+    } else if (method == "POST") {
+        // Handle API calls
+        size_t bodyPos = request.find("\r\n\r\n");
+        string body = request.substr(bodyPos + 4);
+
+        if (path == "/login") {
+            // Parse JSON body
+            // Simple parse, assume {"email":"...", "password":"..."}
+            size_t emailStart = body.find("\"email\":\"") + 9;
+            size_t emailEnd = body.find("\"", emailStart);
+            string email = body.substr(emailStart, emailEnd - emailStart);
+            size_t passStart = body.find("\"password\":\"") + 12;
+            size_t passEnd = body.find("\"", passStart);
+            string password = body.substr(passStart, passEnd - passStart);
+
+            if (globalSystem->authenticate(email, password)) {
+                currentUser = globalSystem->getCurrentUser();
+                return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"success\":true}";
+            } else {
+                return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"success\":false}";
+            }
+        } else if (path == "/register") {
+            // Parse JSON
+            // Assume {"firstName":"...", "lastName":"...", "email":"...", "password":"...", "balance":...}
+            // Simple parse
+            size_t fnStart = body.find("\"firstName\":\"") + 13;
+            size_t fnEnd = body.find("\"", fnStart);
+            string firstName = body.substr(fnStart, fnEnd - fnStart);
+            size_t lnStart = body.find("\"lastName\":\"") + 12;
+            size_t lnEnd = body.find("\"", lnStart);
+            string lastName = body.substr(lnStart, lnEnd - lnStart);
+            size_t emailStart = body.find("\"email\":\"") + 9;
+            size_t emailEnd = body.find("\"", emailStart);
+            string email = body.substr(emailStart, emailEnd - emailStart);
+            size_t passStart = body.find("\"password\":\"") + 12;
+            size_t passEnd = body.find("\"", passStart);
+            string password = body.substr(passStart, passEnd - passStart);
+            size_t balStart = body.find("\"balance\":") + 10;
+            size_t balEnd = body.find("}", balStart);
+            double balance = stod(body.substr(balStart, balEnd - balStart));
+
+            globalSystem->registerUser(firstName, lastName, email, password, balance);
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"success\":true}";
+        } else if (path == "/user/info" && currentUser) {
+            string json = "{\"firstName\":\"" + currentUser->getFirstName() + "\", \"lastName\":\"" + currentUser->getLastName() + "\", \"balance\":" + to_string(currentUser->getAccountBalance()) + "}";
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
+        } else if (path == "/resources") {
+            string json = "[";
+            for (size_t i = 0; i < globalSystem->resources.size(); ++i) {
+                Resource* r = globalSystem->resources[i];
+                json += "{\"id\":" + to_string(r->getResourceID()) + ", \"title\":\"" + r->getTitle() + "\", \"author\":\"" + r->getAuthor() + "\"}";
+                if (i < globalSystem->resources.size() - 1) json += ",";
+            }
+            json += "]";
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
+        } else if (path == "/user/borrowed" && currentUser) {
+            string json = "[";
+            // Assume borrowRecords are in system
+            for (size_t i = 0; i < globalSystem->borrowRecords.size(); ++i) {
+                BorrowRecord* br = globalSystem->borrowRecords[i];
+                if (br->getUser() == currentUser) {
+                    Resource* r = br->getResource();
+                    json += "{\"resource\":{\"title\":\"" + r->getTitle() + "\"}, \"borrowDate\":\"" + br->getBorrowDate() + "\"}";
+                    if (i < globalSystem->borrowRecords.size() - 1) json += ",";
+                }
+            }
+            json += "]";
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
+        } else if (path == "/borrow" && currentUser) {
+            // Parse {"resourceId":..., "date":"..."}
+            size_t idStart = body.find("\"resourceId\":") + 13;
+            size_t idEnd = body.find(",", idStart);
+            int resourceId = stoi(body.substr(idStart, idEnd - idStart));
+            size_t dateStart = body.find("\"date\":\"") + 8;
+            size_t dateEnd = body.find("\"", dateStart);
+            string date = body.substr(dateStart, dateEnd - dateStart);
+
+            bool success = globalSystem->borrowResource(resourceId, date);
+            string message = success ? "Borrowed successfully" : "Borrow failed";
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"message\":\"" + message + "\"}";
+        } else if (path == "/return" && currentUser) {
+            // Similar to borrow
+            size_t idStart = body.find("\"resourceId\":") + 13;
+            size_t idEnd = body.find(",", idStart);
+            int resourceId = stoi(body.substr(idStart, idEnd - idStart));
+            size_t dateStart = body.find("\"date\":\"") + 8;
+            size_t dateEnd = body.find("\"", dateStart);
+            string date = body.substr(dateStart, dateEnd - dateStart);
+
+            double fine = globalSystem->returnResource(resourceId, date);
+            string message = "Returned successfully, fine: " + to_string(fine);
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"message\":\"" + message + "\"}";
+        } else if (path == "/recharge" && currentUser) {
+            size_t amtStart = body.find("\"amount\":") + 9;
+            size_t amtEnd = body.find("}", amtStart);
+            double amount = stod(body.substr(amtStart, amtEnd - amtStart));
+            currentUser->rechargebalance(amount);
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"message\":\"Recharged successfully\"}";
+        } else if (path == "/logout") {
+            currentUser = nullptr;
+            globalSystem->logout();
+            return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"success\":true}";
+        }
+        // Add more as needed
+    }
+    return "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found";
+}
+
+void handleClient(SOCKET clientSocket) {
+    char buffer[1024];
+    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (bytesReceived > 0) {
+        string request(buffer, bytesReceived);
+        string response = handleRequest(request);
+        send(clientSocket, response.c_str(), response.size(), 0);
+    }
+    closesocket(clientSocket);
+}
+
+void startServer() {
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+    SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(8080);
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+    bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
+    listen(serverSocket, 5);
+
+    cout << "Server started on http://localhost:8080" << endl;
+
+    while (true) {
+        SOCKET clientSocket = accept(serverSocket, nullptr, nullptr);
+        thread t(handleClient, clientSocket);
+        t.detach();
+    }
+
+    closesocket(serverSocket);
+    WSACleanup();
+}
 
 void testSeparator(string title)
 {
@@ -25,8 +208,7 @@ void testSeparator(string title)
     cout << string(50, '=') << endl;
 }
 
-int main()
-{
+void runTests() {
     cout << "\n"
          << string(60, '#') << endl;
     cout << "#" << string(58, ' ') << "#" << endl;
@@ -380,5 +562,14 @@ int main()
     cout << string(50, '=') << endl;
     system.saveData();
 
+    return 0;
+}
+
+int main()
+{
+    LibrarySystem system;
+    globalSystem = &system;
+    runTests();
+    startServer();
     return 0;
 }
