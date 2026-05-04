@@ -19,6 +19,7 @@ using namespace std;
 LibrarySystem::LibrarySystem()
 {
     currentUser = nullptr;
+    loadData();
 }
 
 LibrarySystem::~LibrarySystem()
@@ -45,6 +46,7 @@ void LibrarySystem::addUser(User *u)
 {
     users.push_back(u);
     cout << "User added: " << u->getFullName() << endl;
+    saveData();
 }
 
 void LibrarySystem::addAdmin(Admin *a)
@@ -122,7 +124,10 @@ bool LibrarySystem::borrowResource(int resourceID, string date)
         cout << "Cannot borrow: resource not found." << endl;
         return false;
     }
-    return currentUser->borrowresources(res, date);
+    bool success = currentUser->borrowresources(res, date);
+    if (success)
+        saveData();
+    return success;
 }
 
 double LibrarySystem::returnResource(int resourceID, string date)
@@ -138,7 +143,26 @@ double LibrarySystem::returnResource(int resourceID, string date)
         cout << "Cannot return: resource not found." << endl;
         return 0.0;
     }
-    return currentUser->returnresources(res, date);
+    double result = currentUser->returnresources(res, date);
+    if (result >= 0.0)
+        saveData();
+    return result;
+}
+
+bool LibrarySystem::changeUserMembershipTier(int userID, int tier, bool confirm)
+{
+    for (auto &user : users)
+    {
+        if (user->getID() == userID)
+        {
+            bool changed = user->changeMembershipTier(tier, confirm);
+            if (changed)
+                saveData();
+            return changed;
+        }
+    }
+    cout << "User not found with ID " << userID << endl;
+    return false;
 }
 
 void LibrarySystem::showAllUsers() const

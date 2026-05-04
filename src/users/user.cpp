@@ -161,7 +161,7 @@ double User::returnresources(Resource *r, string date)
     if (!found)
     {
         cout << "Resource Not Found In Borrowed List." << endl;
-        return 0.0;
+        return -1.0;
     }
 
     for (int i = 0; i < (int)borrowHistory.size(); i++)
@@ -172,7 +172,7 @@ double User::returnresources(Resource *r, string date)
             if (returnDate == 0)
             {
                 cout << "Invalid Return Date." << endl;
-                return 0.0;
+                return -1.0;
             }
             int dueDate = convertDate(borrowHistory[i].getDueDate());
             borrowHistory[i].markAsReturned(date);
@@ -200,7 +200,7 @@ double User::returnresources(Resource *r, string date)
         }
     }
     cout << "Record Not Found In History." << endl;
-    return 0.0;
+    return -1.0;
 }
 void User::rechargebalance(double amount)
 {
