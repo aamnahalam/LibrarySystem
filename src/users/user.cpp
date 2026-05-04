@@ -13,6 +13,10 @@ int convertDate(string date);
 int addDays(int date, int days);
 string formatDate(int date);
 
+static string getTierName(int tier);
+static int getMembershipIndex(const string &level);
+static double getTierCost(int tier);
+
 // Constructor
 User::User(int id, string firstName, string lastName, string email, string password, double balance)
     : Person(id, firstName, lastName, email, password)
@@ -96,6 +100,14 @@ bool User::borrowresources(Resource *r, string date)
             return false;
         }
     }
+
+    int borrowDateInt = convertDate(date);
+    if (borrowDateInt == 0)
+    {
+        cout << "Invalid Borrow Date." << endl;
+        return false;
+    }
+
     borrowedResources.push_back(r);
     r->updateAvailability(false);
     r->incrementBorrowCount();
@@ -113,14 +125,6 @@ bool User::borrowresources(Resource *r, string date)
     if (!found)
         favouriteCategories.push_back(cat);
 
-    int borrowDateInt = convertDate(date);
-    if (borrowDateInt == 0)
-    {
-        cout << "Invalid Borrow Date." << endl;
-        borrowedResources.pop_back();
-        r->updateAvailability(true);
-        return false;
-    }
     string dueDateStr = formatDate(addDays(borrowDateInt, 7));
 
     cout << "Borrowing: " << r->getTitle() << " | Borrow: " << date << " | Due: " << dueDateStr << endl;
@@ -223,7 +227,36 @@ void User::setMembership(Membership *m)
     membership = m;
 }
 
-bool User::changeMembershipTier(int tier)
+string User::getMembershipChangeNotice(int tier) const
+{
+    string targetName = getTierName(tier);
+    if (targetName == "Unknown")
+        return "Invalid membership choice. Choose 1, 2 or 3.";
+
+    int currentTier = 1;
+    string currentName = "Essential";
+    if (membership)
+    {
+        currentName = membership->getLevelName();
+        currentTier = getMembershipIndex(currentName);
+    }
+
+    if (currentTier == tier)
+        return "You already have the " + targetName + " membership.";
+
+    if (tier < currentTier)
+    {
+        return "Warning: You are downgrading from " + currentName + " to " + targetName + ". "
+               "This will reduce your borrow limit and benefits. Confirm before switching.";
+    }
+
+    double cost = getTierCost(tier);
+    string costText = (cost > 0.0) ? "Rs." + to_string((int)cost) : "Free";
+    return "You are switching from " + currentName + " to " + targetName + ". "
+           "This change costs " + costText + ". Confirm before switching.";
+}
+
+bool User::changeMembershipTier(int tier, bool confirm)
 {
     double cost = 0.0;
     string tierName;
@@ -249,6 +282,14 @@ bool User::changeMembershipTier(int tier)
     if (membership != nullptr && membership->getLevelName() == tierName)
     {
         cout << "You already have the " << tierName << " membership." << endl;
+        return false;
+    }
+
+    if (tier < getMembershipIndex(membership ? membership->getLevelName() : string("Essential")) && !confirm)
+    {
+        cout << "Warning: You are about to downgrade to " << tierName << ". "
+             << "This will lower your borrow limit and reduce benefits. "
+             << "Please confirm the downgrade to proceed." << endl;
         return false;
     }
 
@@ -489,6 +530,44 @@ string formatDate(int date)
 
     return to_string(year) + "-" + m + "-" + d;
 }
+
+static string getTierName(int tier)
+{
+    switch (tier)
+    {
+        case 1:
+            return "Essential";
+        case 2:
+            return "Extra";
+        case 3:
+            return "Deluxe";
+        default:
+            return "Unknown";
+    }
+}
+
+static int getMembershipIndex(const string &level)
+{
+    if (level == "Extra")
+        return 2;
+    if (level == "Deluxe")
+        return 3;
+    return 1;
+}
+
+static double getTierCost(int tier)
+{
+    switch (tier)
+    {
+        case 2:
+            return 10.0;
+        case 3:
+            return 20.0;
+        default:
+            return 0.0;
+    }
+}
+
 // view  history
 void User::viewhistory()
 {
