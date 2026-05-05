@@ -4,7 +4,6 @@
 #include "../resources/Resource.h"
 #include "../Membership/Membership.h"
 #include "../Membership/NormalMembership.h"
-#include "../Membership/FrequentReaderMembership.h"
 #include "../Membership/ExtraMembership.h"
 #include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
