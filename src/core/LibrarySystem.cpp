@@ -19,6 +19,7 @@ using namespace std;
 LibrarySystem::LibrarySystem()
 {
     currentUser = nullptr;
+    currentAdmin = nullptr;
     loadData();
 }
 
@@ -80,18 +81,78 @@ void LibrarySystem::registerUser(string firstName, string lastName, string email
     saveData();
 }
 
-// Authenticate user
+// Register new admin (only SuperAdmins can do this)
+bool LibrarySystem::registerAdmin(string firstName, string lastName, string email, string password, string level)
+{
+    // Check if current user is a SuperAdmin
+    if (!currentAdmin || currentAdmin->getAccessLevel() != "SuperAdmin")
+    {
+        cout << "Error: Only SuperAdmins can create new admins." << endl;
+        return false;
+    }
+
+    // Check if email already exists
+    for (auto &admin : admins) {
+        if (admin->getEmail() == email) {
+            cout << "Error: Admin with this email already exists." << endl;
+            return false;
+        }
+    }
+    for (auto &user : users) {
+        if (user->getEmail() == email) {
+            cout << "Error: User with this email already exists." << endl;
+            return false;
+        }
+    }
+
+    // Find the next available ID (for admins, use IDs >= 100)
+    int nextId = 100;
+    for (auto &a : admins) {
+        if (a->getID() >= nextId) {
+            nextId = a->getID() + 1;
+        }
+    }
+
+    // Create new admin
+    Admin *newAdmin = new Admin(nextId, firstName, lastName, email, password, level);
+
+    // Add to admins
+    admins.push_back(newAdmin);
+
+    cout << "Admin registered successfully: " << newAdmin->getFullName() << " (ID: " << nextId << ", Level: " << level << ")" << endl;
+
+    // Save data
+    saveData();
+    return true;
+}
+
+// Authenticate user or admin
 bool LibrarySystem::authenticate(string email, string password)
 {
+    // Try to authenticate as user
     for (auto &user : users)
     {
         if (user->getEmail() == email && user->getPassword() == password)
         {
             currentUser = user;
+            currentAdmin = nullptr;  // Clear admin session
             cout << "Login Successful. Welcome, " << user->getFullName() << endl;
             return true;
         }
     }
+    
+    // Try to authenticate as admin
+    for (auto &admin : admins)
+    {
+        if (admin->getEmail() == email && admin->getPassword() == password)
+        {
+            currentAdmin = admin;
+            currentUser = nullptr;  // Clear user session
+            cout << "Admin Login Successful. Welcome, " << admin->getFullName() << " (" << admin->getAccessLevel() << ")" << endl;
+            return true;
+        }
+    }
+    
     cout << "Login Failed. Invalid email or password." << endl;
     return false;
 }
@@ -99,6 +160,11 @@ bool LibrarySystem::authenticate(string email, string password)
 User *LibrarySystem::getCurrentUser() const
 {
     return currentUser;
+}
+
+Admin *LibrarySystem::getCurrentAdmin() const
+{
+    return currentAdmin;
 }
 
 Resource *LibrarySystem::getResourceByID(int resourceID) const
@@ -348,6 +414,26 @@ void LibrarySystem::saveData()
     resFile.close();
     cout << "Resources saved to resources.txt" << endl;
 
+    // Save Admins
+    cout << "Saving " << admins.size() << " admins..." << endl;
+    ofstream adminFile("admins.txt");
+    if (!adminFile.is_open())
+    {
+        cout << "Error: Cannot open admins.txt" << endl;
+        return;
+    }
+    adminFile << "ID | Name | Email | Password | AccessLevel" << endl;
+    for (auto &a : admins)
+    {
+        adminFile << a->getID() << " | "
+                  << a->getFullName() << " | "
+                  << a->getEmail() << " | "
+                  << a->getPassword() << " | "
+                  << a->getAccessLevel() << endl;
+    }
+    adminFile.close();
+    cout << "Admins saved to admins.txt" << endl;
+
     // Save Borrow History
     ofstream histFile("borrow_history.txt");
     if (!histFile.is_open())
@@ -483,6 +569,56 @@ void LibrarySystem::loadData() {
         }
         resFile.close();
         cout << "Resource data loaded from resources.txt" << endl;
+    }
+
+    // Load Admins
+    ifstream adminFile("admins.txt");
+    if (!adminFile.is_open())
+    {
+        cout << "No saved admin data found. Continuing." << endl;
+    }
+    else
+    {
+        string line;
+        bool isFirstLine = true;
+        while (getline(adminFile, line))
+        {
+            if (isFirstLine && line.find("ID |") == 0) {
+                isFirstLine = false;
+                continue;
+            }
+            if (line.empty()) continue;
+            stringstream ss(line);
+            string token;
+            vector<string> parts;
+            while (getline(ss, token, '|')) {
+                size_t start = token.find_first_not_of(" \t");
+                size_t end = token.find_last_not_of(" \t");
+                if (start != string::npos && end != string::npos) {
+                    token = token.substr(start, end - start + 1);
+                }
+                parts.push_back(token);
+            }
+            if (parts.size() < 5) continue;
+
+            int id = stoi(parts[0]);
+            string name = parts[1];
+            string email = parts[2];
+            string password = parts[3];
+            string accessLevel = parts[4];
+
+            string firstName = name, lastName = "";
+            size_t sp = name.find(' ');
+            if (sp != string::npos) { 
+                firstName = name.substr(0, sp); 
+                lastName = name.substr(sp + 1); 
+            }
+
+            Admin *admin = new Admin(id, firstName, lastName, email, password, accessLevel);
+            admins.push_back(admin);
+        }
+        adminFile.close();
+        cout << "Admin data loaded from admins.txt" << endl;
     }
 
     // Load Borrow History
