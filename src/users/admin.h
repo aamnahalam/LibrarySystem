@@ -29,6 +29,10 @@ public:
     void assignCardType(int userID, LibrarySystem& system);
     void assignMembershipTier(int userID, int tier, LibrarySystem& system);
 
+    // Admin creation (only for SuperAdmins)
+    bool createAdmin(string firstName, string lastName, string email, string password, string level, LibrarySystem& system);
+    string getAccessLevel() const;
+
     void displayInfo() override;
 
     ~Admin() = default;

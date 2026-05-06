@@ -196,3 +196,20 @@ void Admin::displayInfo() {
     cout << "Email: " << getEmail() << endl;
     cout << "Access Level: " << accessLevel << endl;
 }
+
+// GET ACCESS LEVEL
+string Admin::getAccessLevel() const {
+    return accessLevel;
+}
+
+// CREATE NEW ADMIN (only SuperAdmins can do this)
+bool Admin::createAdmin(string firstName, string lastName, string email, string password, string level, LibrarySystem& system) {
+    // Only SuperAdmins can create new admins
+    if (accessLevel != "SuperAdmin") {
+        cout << "Error: Only SuperAdmins can create new admins. Your level: " << accessLevel << endl;
+        return false;
+    }
+
+    // Use the system's registerAdmin method which also performs validation
+    return system.registerAdmin(firstName, lastName, email, password, level);
+}
