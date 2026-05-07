@@ -13,7 +13,6 @@
 #include "src/resources/ClassicShelfBook.h"
 #include "src/resources/BudgetPickBook.h"
 #include "src/Membership/NormalMembership.h"
-#include "src/Membership/FrequentReaderMembership.h"
 #include "src/Membership/ExtraMembership.h"
 #include "src/Membership/DeluxeMembership.h"
 #include "src/services/FineWalletManager.h"
@@ -26,6 +25,7 @@
 
 LibrarySystem* globalSystem;
 User* currentUser = nullptr;
+Admin* currentAdmin = nullptr;
 
 string readFile(const string& path) {
     ifstream file(path);
@@ -100,7 +100,7 @@ string handleRequest(const string& request) {
             globalSystem->registerUser(firstName, lastName, email, password, balance);
             return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"success\":true}";
         } else if (path == "/user/info" && currentUser) {
-            string json = "{\"firstName\":\"" + currentUser->getFirstName() + "\", \"lastName\":\"" + currentUser->getLastName() + "\", \"balance\":" + to_string(currentUser->getAccountBalance()) + "}";
+            string json = "{\"fullName\":\"" + currentUser->getFullName() + "\", \"balance\":" + to_string(currentUser->getAccountBalance()) + "}";
             return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
         } else if (path == "/resources") {
             string json = "[";
@@ -112,17 +112,9 @@ string handleRequest(const string& request) {
             json += "]";
             return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
         } else if (path == "/user/borrowed" && currentUser) {
-            string json = "[";
-            // Assume borrowRecords are in system
-            for (size_t i = 0; i < globalSystem->borrowRecords.size(); ++i) {
-                BorrowRecord* br = globalSystem->borrowRecords[i];
-                if (br->getUser() == currentUser) {
-                    Resource* r = br->getResource();
-                    json += "{\"resource\":{\"title\":\"" + r->getTitle() + "\"}, \"borrowDate\":\"" + br->getBorrowDate() + "\"}";
-                    if (i < globalSystem->borrowRecords.size() - 1) json += ",";
-                }
-            }
-            json += "]";
+            // API endpoint for borrowed books - currently not fully implemented
+            // The UI uses client-side storage for this functionality
+            string json = "[]";
             return "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + json;
         } else if (path == "/borrow" && currentUser) {
             // Parse {"resourceId":..., "date":"..."}
@@ -192,8 +184,7 @@ void startServer() {
 
     while (true) {
         SOCKET clientSocket = accept(serverSocket, nullptr, nullptr);
-        thread t(handleClient, clientSocket);
-        t.detach();
+        handleClient(clientSocket);
     }
 
     closesocket(serverSocket);
@@ -260,7 +251,7 @@ void runTests() {
     // ========================================
     testSeparator("TEST 3: RESOURCE CREATION (ALL TYPES)");
 
-    PrimePickBook *book1 = new PrimePickBook(1001, "The Great Gatsby", "F. Scott Fitzgerald", "Fiction");
+    PrimePickBook *book1 = new PrimePickBook(1001, "The Good Gatsby", "F. Scott Fitzgerald", "Fiction");
     PrimePickBook *book2 = new PrimePickBook(1002, "Moby Dick", "Herman Melville", "Adventure");
 
     ClassicShelfBook *book3 = new ClassicShelfBook(1003, "To Kill a Mockingbird", "Harper Lee", "Fiction");
@@ -561,8 +552,6 @@ void runTests() {
     cout << "SAVING DATA TO FILES..." << endl;
     cout << string(50, '=') << endl;
     system.saveData();
-
-    return 0;
 }
 
 int main()
