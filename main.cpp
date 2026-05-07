@@ -13,7 +13,6 @@
 #include "src/resources/ClassicShelfBook.h"
 #include "src/resources/BudgetPickBook.h"
 #include "src/Membership/NormalMembership.h"
-#include "src/Membership/FrequentReaderMembership.h"
 #include "src/Membership/ExtraMembership.h"
 #include "src/Membership/DeluxeMembership.h"
 #include "src/services/FineWalletManager.h"
