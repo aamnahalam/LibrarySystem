@@ -49,6 +49,22 @@ string BorrowRecord::getReturnDate() const
     return returnDate;
 }
 
+static bool parseDateString(const string &date, int &year, int &month, int &day)
+{
+    if (date.size() != 10 || date[4] != '-' || date[7] != '-')
+        return false;
+    try {
+        year = stoi(date.substr(0, 4));
+        month = stoi(date.substr(5, 2));
+        day = stoi(date.substr(8, 2));
+    } catch (const exception &) {
+        return false;
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31)
+        return false;
+    return true;
+}
+
 void BorrowRecord::showRecord() {
     cout << "User: " << user->getFullName() << " (ID: " << user->getID() << ")" << endl;
     cout << "Email: " << user->getEmail() << endl;
@@ -71,10 +87,9 @@ bool BorrowRecord::isOverdue() const
     if (isReturned)
         return false;
 
-    // Parse due date (format: YYYY-MM-DD)
-    int dueYear = stoi(dueDate.substr(0, 4));
-    int dueMonth = stoi(dueDate.substr(5, 2));
-    int dueDay = stoi(dueDate.substr(8, 2));
+    int dueYear, dueMonth, dueDay;
+    if (!parseDateString(dueDate, dueYear, dueMonth, dueDay))
+        return false;
 
     // Get current date
     time_t now = time(0);
@@ -100,10 +115,9 @@ double BorrowRecord::calculateFine() const
     if (isReturned)
         return 0.0;
 
-    // Parse due date
-    int dueYear = stoi(dueDate.substr(0, 4));
-    int dueMonth = stoi(dueDate.substr(5, 2));
-    int dueDay = stoi(dueDate.substr(8, 2));
+    int dueYear, dueMonth, dueDay;
+    if (!parseDateString(dueDate, dueYear, dueMonth, dueDay))
+        return 0.0;
 
     // Get current date
     time_t now = time(0);

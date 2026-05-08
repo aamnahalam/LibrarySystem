@@ -16,6 +16,28 @@
 #include <sstream>
 using namespace std;
 
+static bool parseInt(const string &value, int &out)
+{
+    try {
+        size_t idx;
+        out = stoi(value, &idx);
+        return idx == value.size();
+    } catch (...) {
+        return false;
+    }
+}
+
+static bool parseDouble(const string &value, double &out)
+{
+    try {
+        size_t idx;
+        out = stod(value, &idx);
+        return idx == value.size();
+    } catch (...) {
+        return false;
+    }
+}
+
 LibrarySystem::LibrarySystem()
 {
     currentUser = nullptr;
@@ -487,13 +509,15 @@ void LibrarySystem::loadData() {
             }
             if (parts.size() < 7) continue;
 
-            int    id      = stoi(parts[0]);
+            int id;
+            double balance;
+            int loyaltyPoints;
             string name    = parts[1];
             string email   = parts[2];
             string pass    = parts[3];
-            double balance = stod(parts[4]);
             string membershipType = parts[5];
-            int loyaltyPoints = stoi(parts[6]);
+            if (!parseInt(parts[0], id) || !parseDouble(parts[4], balance) || !parseInt(parts[6], loyaltyPoints))
+                continue;
 
             string firstName = name, lastName = "";
             size_t sp = name.find(' ');
@@ -543,14 +567,16 @@ void LibrarySystem::loadData() {
             }
             if (parts.size() < 8) continue;
 
-            int id = stoi(parts[0]);
+            int id;
+            double rating;
+            int borrowCount;
             string type = parts[1];
             string title = parts[2];
             string author = parts[3];
             string category = parts[4];
             bool available = parts[5] == "1";
-            double rating = stod(parts[6]);
-            int borrowCount = stoi(parts[7]);
+            if (!parseInt(parts[0], id) || !parseDouble(parts[6], rating) || !parseInt(parts[7], borrowCount))
+                continue;
 
             Resource *res = nullptr;
             if (type == "PrimePick")
@@ -601,11 +627,13 @@ void LibrarySystem::loadData() {
             }
             if (parts.size() < 5) continue;
 
-            int id = stoi(parts[0]);
+            int id;
             string name = parts[1];
             string email = parts[2];
             string password = parts[3];
             string accessLevel = parts[4];
+            if (!parseInt(parts[0], id))
+                continue;
 
             string firstName = name, lastName = "";
             size_t sp = name.find(' ');
@@ -651,13 +679,15 @@ void LibrarySystem::loadData() {
         }
         if (parts.size() < 7) continue;
 
-        int userID = stoi(parts[0]);
-        int resourceID = stoi(parts[1]);
+        int userID;
+        int resourceID;
         string resourceName = parts[2];
         string borrowDate = parts[3];
         string dueDate = parts[4];
         bool returned = parts[5] == "1";
         string returnDate = parts[6];
+        if (!parseInt(parts[0], userID) || !parseInt(parts[1], resourceID))
+            continue;
 
         User *user = nullptr;
         for (auto &u : users)

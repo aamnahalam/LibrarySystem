@@ -45,7 +45,7 @@ void Resource::addRating(int value)
     rating = (rating + value) / 2;
 }
 
-bool Resource::getAvailability()
+bool Resource::getAvailability() const
 {
     return isAvailable;
 }

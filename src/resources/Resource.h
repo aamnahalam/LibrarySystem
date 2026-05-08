@@ -36,7 +36,7 @@ public:
     
     void addRating(int value);
     void incrementBorrowCount();
-    bool getAvailability();
+    bool getAvailability() const;
     string getCategory() const;
     double getReviewScore() const;
     double getRating() const;
