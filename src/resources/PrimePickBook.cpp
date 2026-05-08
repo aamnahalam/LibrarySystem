@@ -11,11 +11,6 @@ void PrimePickBook::displayDetails()
     cout << "Author: " << author << endl;
 }
 
-int PrimePickBook::getBorrowLimit()
-{
-    return 5;
-}
-
 double PrimePickBook::getFineRate()
 {
     return 5.0;

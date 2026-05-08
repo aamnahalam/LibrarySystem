@@ -20,13 +20,6 @@ public:
     // Method to add review:
     void addReview(const string &text, int rating);
 
-    // Method to hide review:
-    void hideReview();
-
-    // Setters:
-    void setRatingValue(int rating);
-    void setReviewText(const string &text);
-
     // Getters
     int getRatingValue() const;
     string getReviewText() const;

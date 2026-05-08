@@ -19,19 +19,6 @@ void Review::addReview(const string &text, int rating)
     ratingValue = rating;
     isHidden = false;
 }
-void Review::hideReview()
-{
-    isHidden = true;
-}
-// Definition of setters:
-void Review::setRatingValue(int rating)
-{
-    ratingValue = rating;
-}
-void Review::setReviewText(const string &text)
-{
-    reviewText = text;
-}
 // Definition of getters:
 int Review::getRatingValue() const
 {

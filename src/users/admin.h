@@ -25,9 +25,10 @@ public:
     void generateOverdueResourcesReport(LibrarySystem& system);
     void generateFineReport(LibrarySystem& system);
     
-    void approveDigitalUpload(int resourceID, LibrarySystem& system);
-    void assignCardType(int userID, LibrarySystem& system);
     void assignMembershipTier(int userID, int tier, LibrarySystem& system);
+
+    // User management (for admins)
+    void createUser(string firstName, string lastName, string email, string password, double initialBalance, LibrarySystem& system);
 
     // Admin creation (only for SuperAdmins)
     bool createAdmin(string firstName, string lastName, string email, string password, string level, LibrarySystem& system);

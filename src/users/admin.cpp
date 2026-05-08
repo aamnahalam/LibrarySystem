@@ -8,6 +8,8 @@
 #include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
 #include <iostream>
+#include <iomanip>
+#include <string>
 using namespace std;
 
 Admin::Admin(int id, string firstName, string lastName, string email, string password, string level)
@@ -23,7 +25,6 @@ void Admin::addResources(Resource *r, LibrarySystem& system) {
     }
 
     system.resources.push_back(r);
-    cout << " Resource Added Successfully. " << endl;
 }
 // REMOVE RESOURCE
 bool Admin::removeResources(int resourceID, LibrarySystem& system) {
@@ -31,11 +32,9 @@ bool Admin::removeResources(int resourceID, LibrarySystem& system) {
         if ((*it)->getResourceID() == resourceID) {
             delete *it; 
             system.resources.erase(it);
-            cout << " Resource Removed Successfully. " << endl;
             return true;
         }
     }
-    cout << " Resource Not Found. " << endl;
     return false;
 }
 
@@ -44,11 +43,9 @@ bool Admin::updateResources(int resourceID, LibrarySystem& system) {
     for (auto& r : system.resources) {
         if (r->getResourceID() == resourceID) {
             r->updateAvailability(true);
-            cout << " Resource Updated Successfully. " << endl;
             return true;
         }
     }
-    cout << " Resource Not Found. " << endl;
     return false;
 }
 
@@ -56,12 +53,14 @@ bool Admin::updateResources(int resourceID, LibrarySystem& system) {
 void Admin::lockUser(int userID, LibrarySystem& system) {
     for (auto u : system.users) {
         if (u && u->getID() == userID) {
-            u->lock(); 
-            cout << " User Locked Successfully. " << endl;
+            if (u->getLockStatus()) {
+                u->unlock();
+            } else {
+                u->lock();
+            }
             return;
         }
     }
-    cout << " User Not Found. " << endl;
 }
 
 // CUSTOMER REPORT
@@ -76,36 +75,55 @@ void Admin::generateCustomerReport(LibrarySystem& system) {
     }
 }
 
-// ISSUED RESOURCES REPORT
+// ISSUED RESOURCES REPORT (BORROW HISTORY)
 void Admin::generateIssuedResourcesReport(LibrarySystem& system) {
-    for (const auto& resource : system.resources) {
-        if (!resource->getAvailability()) {
-            cout << "Resource ID: " << resource->getResourceID()
-                 << ", Title: " << resource->getTitle() << endl;
+    bool hasRecords = false;
+    cout << left << setw(15) << "User" << setw(25) << "Book Title" 
+         << setw(15) << "Borrow Date" << setw(15) << "Due Date" 
+         << setw(12) << "Returned" << "\n";
+    cout << string(82, '-') << "\n";
+    
+    for (const auto user : system.users) {
+        if (!user) continue;
+        for (const auto& record : user->getBorrowHistory()) {
+            hasRecords = true;
+            cout << left << setw(15) << user->getFullName().substr(0, 14)
+                 << setw(25) << record.getResourceName().substr(0, 24)
+                 << setw(15) << record.getBorrowDate()
+                 << setw(15) << record.getDueDate()
+                 << setw(12) << (record.getReturnStatus() ? "Yes" : "No") << "\n";
         }
+    }
+    
+    if (!hasRecords) {
+        cout << "No borrow records found.\n";
     }
 }
 
 // OVERDUE REPORT
 void Admin::generateOverdueResourcesReport(LibrarySystem& system) {
-    cout << "Overdue Resources Report:\n";
+    bool hasRecords = false;
     for (const auto user : system.users) {
         if (!user) {
             continue;
         }
         for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
+                hasRecords = true;
                 cout << "User: " << user->getFullName()
                      << ", Resource: " << record.getResourceName()
                      << ", Due Date: " << record.getDueDate() << endl;
             }
         }
     }
+    if (!hasRecords) {
+        cout << "No overdue resources found.\n";
+    }
 }
 
 // FINE REPORT
 void Admin::generateFineReport(LibrarySystem& system) {
-    cout << "Fine Report:\n";
+    bool hasRecords = false;
     for (const auto user : system.users) {
         if (!user) {
             continue;
@@ -114,51 +132,27 @@ void Admin::generateFineReport(LibrarySystem& system) {
 
         for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
-                totalFine += record.calculateFine();
+                double resourceFineRate = 1.0;
+                for (const auto& res : system.resources) {
+                    if (res->getResourceID() == record.getResourceID()) {
+                        resourceFineRate = res->getFineRate();
+                        break;
+                    }
+                }
+                double discountMultiplier = 1.0 - user->getFineDiscount();
+                totalFine += record.calculateFine(resourceFineRate, discountMultiplier);
             }
         }
 
         if (totalFine > 0) {
+            hasRecords = true;
             cout << "User: " << user->getFullName()
-                 << ", Total Fine: $" << totalFine << endl;
+                 << ", Total Fine: Rs." << fixed << setprecision(2) << totalFine << endl;
         }
     }
-}
-
-// APPROVE DIGITAL UPLOAD
-void Admin::approveDigitalUpload(int resourceID, LibrarySystem& system) {
-    for (auto& r : system.resources) {
-        if (r->getResourceID() == resourceID) {
-            r->digitalAvailable = true; // allowed via friend
-            cout << " Digital Upload Approved Successfully. " << endl;
-            return;
-        }
+    if (!hasRecords) {
+        cout << "No fines to report.\n";
     }
-    cout << " Resource Not Found. " << endl;
-}
-
-// ASSIGN MEMBERSHIP 
-void Admin::assignCardType(int userID, LibrarySystem& system) {
-    for (auto& u : system.users) {
-        if (u && u->getID() == userID) {
-            int totalBorrows = (int)u->getBorrowHistory().size();
-            if (totalBorrows >= 20) {
-                u->setMembership(new DeluxeMembership());
-                cout << "Deluxe Membership assigned to " << u->getFullName()
-                     << " (" << totalBorrows << " borrows)" << endl;
-            } else if (totalBorrows >= 10) {
-                u->setMembership(new ExtraMembership());
-                cout << "Extra Membership assigned to " << u->getFullName()
-                     << " (" << totalBorrows << " borrows)" << endl;
-            } else {
-                u->setMembership(new NormalMembership());
-                cout << "Essential Membership assigned to " << u->getFullName()
-                     << " (" << totalBorrows << " borrows)" << endl;
-            }
-            return;
-        }
-    }
-    cout << "User Not Found." << endl;
 }
 
 void Admin::assignMembershipTier(int userID, int tier, LibrarySystem& system) {
@@ -200,6 +194,32 @@ void Admin::displayInfo() {
 // GET ACCESS LEVEL
 string Admin::getAccessLevel() const {
     return accessLevel;
+}
+
+// CREATE NEW USER (Admins can register new users)
+void Admin::createUser(string firstName, string lastName, string email, string password, double initialBalance, LibrarySystem& system) {
+    // Validate input
+    if (firstName.empty() || lastName.empty() || email.empty() || password.empty()) {
+        cout << "Error: All fields are required.\n";
+        return;
+    }
+    
+    if (password.length() < 6) {
+        cout << "Error: Password must be at least 6 characters.\n";
+        return;
+    }
+    
+    // Check if email already exists
+    for (auto& user : system.users) {
+        if (user && user->getEmail() == email) {
+            cout << "Error: User with this email already exists.\n";
+            return;
+        }
+    }
+    
+    // Register the user through the system
+    system.registerUser(firstName, lastName, email, password, initialBalance);
+    cout << "User " << firstName << " " << lastName << " registered successfully.\n";
 }
 
 // CREATE NEW ADMIN (only SuperAdmins can do this)

@@ -2,10 +2,12 @@
 #define RESOURCE_H
 
 #include <string>
+#include <vector>
 using namespace std;
 
 class Admin; // forward declaration
 class LibrarySystem; // forward declaration
+class Review; // forward declaration
 
 class Resource
 {
@@ -16,11 +18,13 @@ protected:
     string category;
     bool isAvailable;
     double rating;
-    bool digitalAvailable;
     double price;
     int borrowDuration;
     int borrowCount;
     bool isNewArrival;
+    vector<Review*> reviews;
+    double averageRating;
+    bool digitalAvailable;
 
 public:
     Resource(int id, string title, string author, string category);
@@ -31,7 +35,6 @@ public:
     string getTitle() const;
     string getAuthor() const;
 
-    virtual int getBorrowLimit() = 0;
     virtual double getFineRate() = 0;
     
     void addRating(int value);
@@ -44,9 +47,15 @@ public:
     bool getIsNewArrival() const;
 
     int getResourceID() const;
-    bool getDigitalAvailable() const;
 
     bool operator>(const Resource& other) const;
+
+    // Review Methods
+    void addReview(Review* review);
+    double getAverageRating() const;
+    void displayReviews() const;
+    vector<Review*> getReviews() const;
+    int getReviewCount() const;
 
     // Friend class for Admin and LibrarySystem access
     friend class Admin;

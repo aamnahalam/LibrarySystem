@@ -11,11 +11,6 @@ void BudgetPickBook::displayDetails()
     cout << "Author: " << author << endl;
 }
 
-int BudgetPickBook::getBorrowLimit()
-{
-    return 3;
-}
-
 double BudgetPickBook::getFineRate()
 {
     return 2.0;
