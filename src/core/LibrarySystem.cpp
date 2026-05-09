@@ -456,6 +456,10 @@ void LibrarySystem::loadData() {
             string membershipType = parts[5];
             int loyaltyPoints = stoi(parts[6]);
             
+            // Parse ID and Balance from the file
+            id = stoi(parts[0]);
+            balance = stod(parts[4]);
+            
             // Load borrowing limits if available (new fields)
             string lastBorrowDate = (parts.size() > 7) ? parts[7] : "";
             int borrowsToday = (parts.size() > 8) ? stoi(parts[8]) : 0;

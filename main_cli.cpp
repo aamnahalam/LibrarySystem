@@ -30,6 +30,32 @@ void pause() {
     getline(cin, dummy);
 }
 
+// Helper function to get current date in YYYY-MM-DD format
+string getCurrentDate() {
+    time_t now = time(0);
+    struct tm* timeinfo = localtime(&now);
+    char buffer[11];
+    strftime(buffer, 11, "%Y-%m-%d", timeinfo);
+    return string(buffer);
+}
+
+// Helper function to calculate due date (14 days from borrow date)
+string getDueDate(string borrowDate) {
+    int year, month, day;
+    sscanf(borrowDate.c_str(), "%d-%d-%d", &year, &month, &day);
+    
+    time_t t = time(0);
+    struct tm* timeinfo = localtime(&t);
+    timeinfo->tm_year = year - 1900;
+    timeinfo->tm_mon = month - 1;
+    timeinfo->tm_mday = day + 14;  // Add 14 days
+    mktime(timeinfo);
+    
+    char buffer[11];
+    strftime(buffer, 11, "%Y-%m-%d", timeinfo);
+    return string(buffer);
+}
+
 void submitReview(Resource* book) {
     clearScreen();
     cout << "============================================================\n";
@@ -491,7 +517,8 @@ void borrowBook() {
     }
     
     try {
-        string borrowDate = "2026-05-08";
+        string borrowDate = getCurrentDate();
+        string dueDate = getDueDate(borrowDate);
         
         // Check specific error conditions
         if (currentUser->getLockStatus()) {
@@ -503,7 +530,8 @@ void borrowBook() {
             cout << "\nBook borrowed successfully!\n";
             cout << "Title: " << book->getTitle() << "\n";
             cout << "Author: " << book->getAuthor() << "\n";
-            cout << "Due Date: 2026-05-22 (14 days)\n";
+            cout << "Borrow Date: " << borrowDate << "\n";
+            cout << "Due Date: " << dueDate << " (14 days)\n";
         } else {
             cout << "\n[ERROR] Could not borrow book. You may have exceeded your borrowing limit.\n";
         }
@@ -569,7 +597,25 @@ void returnBook() {
     }
     
     try {
-        string returnDate = "2026-05-08";
+        string returnDate = getCurrentDate();
+        
+        // Test mode: allow custom return date for fine testing
+        cout << "\n[TEST MODE] Use custom return date to test fine calculation?\n";
+        cout << "Enter 'y' for yes, or press Enter to use today's date: ";
+        string testInput;
+        getline(cin, testInput);
+        
+        if (testInput == "y" || testInput == "Y") {
+            cout << "Enter return date (YYYY-MM-DD) for testing: ";
+            getline(cin, returnDate);
+            cout << "[TEST] Using custom return date: " << returnDate << "\n";
+        }
+        
+    
+        cout << "Current Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
+        bool waiverWasActive = currentUser->hasFineWaiverActive();
+        cout << "Fine Waiver Active: " << (waiverWasActive ? "YES" : "NO") << "\n";
+        
         double fine = currentUser->returnresources(book, returnDate);
         
         if (fine < 0) {
@@ -578,17 +624,24 @@ void returnBook() {
             globalSystem->saveData();
             cout << "\nBook returned successfully!\n";
             cout << "Title: " << book->getTitle() << "\n";
+            cout << "Return Date: " << returnDate << "\n";
+            
             if (fine > 0) {
-                cout << "Fine Amount: Rs." << fixed << setprecision(2) << fine << "\n";
+                cout << "\n[FINE CHARGED] Rs." << fixed << setprecision(2) << fine << "\n";
+                cout << "New Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
+                if (currentUser->getAccountBalance() < 0) {
+                    cout << "WARNING: Your balance is NEGATIVE! You have unpaid fines.\n";
+                } else {
+                    cout << "Balance is sufficient.\n";
+                }
+            } else if (waiverWasActive) {
+                cout << "\n*** FINE WAIVER APPLIED ***\n";
+                cout << "You would have been charged a fine, but your waiver covered it!\n";
+                cout << "Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
             } else {
                 cout << "No fines incurred.\n";
                 cout << "[LOYALTY POINTS] +10 points earned for returning on time!\n";
                 cout << "Total Loyalty Points: " << currentUser->getLoyaltyPoints() << "\n";
-            }
-            
-            // Show waiver status if it was used
-            if (currentUser->hasFineWaiverActive() == false && fine > 0) {
-                cout << "[WAIVER APPLIED] Fine waived by loyalty points!\n";
             }
             
             // Ask if user wants to submit a review
