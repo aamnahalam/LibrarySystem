@@ -450,7 +450,6 @@ void LibrarySystem::loadData() {
 
             int id;
             double balance;
-            int loyaltyPoints;
             string name    = parts[1];
             string email   = parts[2];
             string pass    = parts[3];

@@ -34,6 +34,9 @@ public:
     // Additional methods needed by Admin
     bool isOverdue() const;
     double calculateFine(double fineRate, double discountMultiplier = 1.0, const string& actualReturnDate = "") const;
+
+private:
+    bool parseDateString(const string& date, int& year, int& month, int& day) const;
 };
 
 #endif

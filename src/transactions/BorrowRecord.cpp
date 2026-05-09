@@ -141,3 +141,18 @@ double BorrowRecord::calculateFine(double fineRate, double discountMultiplier, c
     fine *= discountMultiplier;
     return fine;
 }
+
+bool BorrowRecord::parseDateString(const string& date, int& year, int& month, int& day) const {
+    try {
+        // Expected format: YYYY-MM-DD
+        if (date.length() != 10 || date[4] != '-' || date[7] != '-') {
+            return false;
+        }
+        year = stoi(date.substr(0, 4));
+        month = stoi(date.substr(5, 2));
+        day = stoi(date.substr(8, 2));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}

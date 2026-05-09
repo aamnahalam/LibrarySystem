@@ -1,13 +1,8 @@
 ID | Type | Title | Author | Category | Available | Rating | BorrowCount
 1001 | PrimePick | The Good Gatsby | F. Scott Fitzgerald | Fiction | 0 | 3.25 | 2
 1002 | PrimePick | Moby Dick | Herman Melville | Adventure | 0 | 1.5 | 1
-1003 | ClassicShelf | To Kill a Mockingbird | Harper Lee | Fiction | 1 | 2.5 | 0
+1003 | ClassicShelf | To Kill a Mockingbird | Harper Lee | Fiction | 0 | 2.5 | 1
 1004 | ClassicShelf | Pride and Prejudice | Jane Austen | Romance | 0 | 0 | 1
 1005 | BudgetPick | 1984 | George Orwell | Dystopian | 0 | 0 | 1
 1006 | BudgetPick | Brave New World | Aldous Huxley | Science Fiction | 0 | 0 | 1
-1001 | PrimePick | The Good Gatsby | F. Scott Fitzgerald | Fiction | 1 | 3.25 | 1
-1002 | PrimePick | Moby Dick | Herman Melville | Adventure | 0 | 1.5 | 1
-1003 | ClassicShelf | To Kill a Mockingbird | Harper Lee | Fiction | 1 | 2.5 | 0
-1004 | ClassicShelf | Pride and Prejudice | Jane Austen | Romance | 0 | 0 | 1
-1005 | BudgetPick | 1984 | George Orwell | Dystopian | 0 | 0 | 1
-1006 | BudgetPick | Brave New World | Aldous Huxley | Science Fiction | 0 | 0 | 1
+5007 | PrimePick | Better than movies | Lynn Painter | Romcom | 1 | 0 | 0
