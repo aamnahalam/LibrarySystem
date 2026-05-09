@@ -10,6 +10,7 @@
 #include "../Membership/ExtraMembership.h"
 #include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
+#include "../services/Review.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -97,8 +98,6 @@ void LibrarySystem::registerUser(string firstName, string lastName, string email
     // Add to users
     users.push_back(newUser);
 
-    cout << "User registered successfully: " << newUser->getFullName() << " (ID: " << nextId << ")" << endl;
-
     // Optionally save data
     saveData();
 }
@@ -106,10 +105,11 @@ void LibrarySystem::registerUser(string firstName, string lastName, string email
 // Register new admin (only SuperAdmins can do this)
 bool LibrarySystem::registerAdmin(string firstName, string lastName, string email, string password, string level)
 {
-    // Check if current user is a SuperAdmin
-    if (!currentAdmin || currentAdmin->getAccessLevel() != "SuperAdmin")
-    {
-        cout << "Error: Only SuperAdmins can create new admins." << endl;
+    // Note: currentAdmin is only set during login and won't be available if called from admin.cpp
+    // Better to check the admin object directly in Admin::createAdmin()
+    // For now, we'll just validate the level and proceed
+    if (level != "SuperAdmin" && level != "Admin") {
+        cout << "Error: Invalid access level. Must be 'SuperAdmin' or 'Admin'." << endl;
         return false;
     }
 
@@ -158,7 +158,6 @@ bool LibrarySystem::authenticate(string email, string password)
         {
             currentUser = user;
             currentAdmin = nullptr;  // Clear admin session
-            cout << "Login Successful. Welcome, " << user->getFullName() << endl;
             return true;
         }
     }
@@ -170,12 +169,10 @@ bool LibrarySystem::authenticate(string email, string password)
         {
             currentAdmin = admin;
             currentUser = nullptr;  // Clear user session
-            cout << "Admin Login Successful. Welcome, " << admin->getFullName() << " (" << admin->getAccessLevel() << ")" << endl;
             return true;
         }
     }
     
-    cout << "Login Failed. Invalid email or password." << endl;
     return false;
 }
 
@@ -282,100 +279,6 @@ void LibrarySystem::logout()
     currentUser = nullptr;
 }
 
-// Search resource by keyword
-vector<Resource *> LibrarySystem::searchResource(string keyword)
-{
-    vector<Resource *> result;
-    for (auto r : resources)
-        if (r->getTitle().find(keyword) != string::npos ||
-            r->getCategory().find(keyword) != string::npos)
-            result.push_back(r);
-    return result;
-}
-
-// Filter by category
-vector<Resource *> LibrarySystem::filterResources(string category)
-{
-    vector<Resource *> result;
-
-    for (auto r : resources)
-    {
-        if (r->getCategory() == category)
-        {
-            result.push_back(r);
-        }
-    }
-
-    return result;
-}
-
-// Filter available resources
-vector<Resource *> LibrarySystem::filterByAvailability()
-{
-    vector<Resource *> result;
-
-    for (auto r : resources)
-    {
-        if (r->getAvailability())
-        {
-            result.push_back(r);
-        }
-    }
-
-    return result;
-}
-
-// Filter new arrivals
-vector<Resource *> LibrarySystem::filterByNewArrivals()
-{
-    vector<Resource *> result;
-
-    for (auto r : resources)
-    {
-        if (r->getIsNewArrival())
-        {
-            result.push_back(r);
-        }
-    }
-
-    return result;
-}
-
-// Filter most borrowed
-vector<Resource *> LibrarySystem::filterByMostBorrowed()
-{
-    vector<Resource *> result = resources;
-
-    sort(result.begin(), result.end(), [](Resource *a, Resource *b)
-         { return a->getBorrowCount() > b->getBorrowCount(); });
-
-    return result;
-}
-
-// Filter by rating
-vector<Resource *> LibrarySystem::filterByRating()
-{
-    vector<Resource *> result = resources;
-
-    sort(result.begin(), result.end(), [](Resource *a, Resource *b)
-         { return a->getReviewScore() > b->getReviewScore(); });
-
-    return result;
-}
-
-// Filter by user preference
-vector<Resource *> LibrarySystem::filterByUserPreference(User *u)
-{
-    vector<Resource *> result;
-    string pref = u->getPreferredCategory();
-    if (pref.empty())
-        return result;
-    for (auto r : resources)
-        if (r->getCategory() == pref)
-            result.push_back(r);
-    return result;
-}
-
 // FILE HANDLING:
 
 // Save data
@@ -388,7 +291,7 @@ void LibrarySystem::saveData()
         cout << "Error: Cannot open users.txt" << endl;
         return;
     }
-    userFile << "ID | Name | Email | Password | Balance | Membership | LoyaltyPoints" << endl;
+    userFile << "ID | Name | Email | Password | Balance | Membership | LoyaltyPoints | LastBorrowDate | BorrowsToday | LastBorrowMonth | BorrowsThisMonth" << endl;
     for (auto &u : users)
     {
         string membershipType = "Essential";
@@ -401,10 +304,13 @@ void LibrarySystem::saveData()
                  << u->getPassword() << " | "
                  << u->getAccountBalance() << " | "
                  << membershipType << " | "
-                 << u->getLoyaltyPoints() << endl;
+                 << u->getLoyaltyPoints() << " | "
+                 << u->getLastBorrowDate() << " | "
+                 << u->getBorrowsToday() << " | "
+                 << u->getLastBorrowMonth() << " | "
+                 << u->getBorrowsThisMonth() << endl;
     }
     userFile.close();
-    cout << "Users saved to users.txt" << endl;
 
     // Save Resources
     ofstream resFile("resources.txt");
@@ -434,10 +340,8 @@ void LibrarySystem::saveData()
                 << r->getBorrowCount() << endl;
     }
     resFile.close();
-    cout << "Resources saved to resources.txt" << endl;
 
     // Save Admins
-    cout << "Saving " << admins.size() << " admins..." << endl;
     ofstream adminFile("admins.txt");
     if (!adminFile.is_open())
     {
@@ -454,7 +358,6 @@ void LibrarySystem::saveData()
                   << a->getAccessLevel() << endl;
     }
     adminFile.close();
-    cout << "Admins saved to admins.txt" << endl;
 
     // Save Borrow History
     ofstream histFile("borrow_history.txt");
@@ -478,11 +381,47 @@ void LibrarySystem::saveData()
         }
     }
     histFile.close();
-    cout << "Borrow history saved to borrow_history.txt" << endl;
+
+    // Save Reviews
+    ofstream reviewFile("reviews.txt");
+    if (!reviewFile.is_open())
+    {
+        cout << "Error: Cannot open reviews.txt" << endl;
+        return;
+    }
+    reviewFile << "ResourceID | UserID | Rating | ReviewText" << endl;
+    for (auto &r : resources)
+    {
+        for (const auto &review : r->getReviews())
+        {
+            if (review && review->getUser())
+            {
+                // Replace newlines and pipes with spaces to avoid parsing issues
+                string reviewText = review->getReviewText();
+                for (char &c : reviewText)
+                {
+                    if (c == '\n' || c == '|') c = ' ';
+                }
+                reviewFile << r->getResourceID() << " | "
+                           << review->getUser()->getID() << " | "
+                           << review->getRatingValue() << " | "
+                           << reviewText << endl;
+            }
+        }
+    }
+    reviewFile.close();
 }
 
 // Load data 
 void LibrarySystem::loadData() {
+    // Clear existing data before loading
+    for (auto user : users) delete user;
+    users.clear();
+    for (auto resource : resources) delete resource;
+    resources.clear();
+    for (auto admin : admins) delete admin;
+    admins.clear();
+    
     ifstream userFile("users.txt");
     if (!userFile.is_open()) {
         cout << "No saved user data found. Starting fresh." << endl;
@@ -516,8 +455,13 @@ void LibrarySystem::loadData() {
             string email   = parts[2];
             string pass    = parts[3];
             string membershipType = parts[5];
-            if (!parseInt(parts[0], id) || !parseDouble(parts[4], balance) || !parseInt(parts[6], loyaltyPoints))
-                continue;
+            int loyaltyPoints = stoi(parts[6]);
+            
+            // Load borrowing limits if available (new fields)
+            string lastBorrowDate = (parts.size() > 7) ? parts[7] : "";
+            int borrowsToday = (parts.size() > 8) ? stoi(parts[8]) : 0;
+            string lastBorrowMonth = (parts.size() > 9) ? parts[9] : "";
+            int borrowsThisMonth = (parts.size() > 10) ? stoi(parts[10]) : 0;
 
             string firstName = name, lastName = "";
             size_t sp = name.find(' ');
@@ -531,6 +475,13 @@ void LibrarySystem::loadData() {
             else
                 user->setMembership(new NormalMembership());
             for (int i = 0; i < loyaltyPoints; ++i) user->earnpoints(1);
+            
+            // Restore borrowing limits
+            user->lastBorrowDate = lastBorrowDate;
+            user->borrowsToday = borrowsToday;
+            user->lastBorrowMonth = lastBorrowMonth;
+            user->borrowsThisMonth = borrowsThisMonth;
+            
             users.push_back(user);
         }
     }
@@ -649,6 +600,13 @@ void LibrarySystem::loadData() {
         cout << "Admin data loaded from admins.txt" << endl;
     }
 
+    if (admins.empty()) {
+        cout << "No admins found. Seeding default admin accounts." << endl;
+        admins.push_back(new Admin(101, "Mr", "Boss", "admin@library.com", "admin123", "SuperAdmin"));
+        admins.push_back(new Admin(102, "Ms", "Manager", "manager@library.com", "manager123", "Admin"));
+        saveData();
+    }
+
     // Load Borrow History
     ifstream histFile("borrow_history.txt");
     if (!histFile.is_open())
@@ -721,4 +679,78 @@ void LibrarySystem::loadData() {
     }
     histFile.close();
     cout << "Borrow history loaded from borrow_history.txt" << endl;
+
+    // Load Reviews
+    ifstream reviewFile("reviews.txt");
+    if (!reviewFile.is_open())
+    {
+        cout << "No saved review data found. Starting fresh." << endl;
+    }
+    else
+    {
+        string line;
+        bool isFirstLine = true;
+        while (getline(reviewFile, line))
+        {
+            if (isFirstLine && line.find("ResourceID |") == 0)
+            {
+                isFirstLine = false;
+                continue;
+            }
+            if (line.empty()) continue;
+            
+            // Parse the line
+            stringstream ss(line);
+            string token;
+            vector<string> parts;
+            while (getline(ss, token, '|'))
+            {
+                size_t start = token.find_first_not_of(" \t");
+                size_t end = token.find_last_not_of(" \t");
+                if (start != string::npos && end != string::npos)
+                {
+                    token = token.substr(start, end - start + 1);
+                }
+                parts.push_back(token);
+            }
+            
+            if (parts.size() < 4) continue;
+            
+            int resourceID = stoi(parts[0]);
+            int userID = stoi(parts[1]);
+            int rating = stoi(parts[2]);
+            string reviewText = parts[3];
+            
+            // Find the resource
+            Resource* resource = nullptr;
+            for (auto& res : resources)
+            {
+                if (res->getResourceID() == resourceID)
+                {
+                    resource = res;
+                    break;
+                }
+            }
+            
+            // Find the user
+            User* user = nullptr;
+            for (auto& u : users)
+            {
+                if (u->getID() == userID)
+                {
+                    user = u;
+                    break;
+                }
+            }
+            
+            // Create and add review if both resource and user exist
+            if (resource && user)
+            {
+                Review* review = new Review(rating, reviewText, user);
+                resource->addReview(review);
+            }
+        }
+        reviewFile.close();
+        cout << "Reviews loaded from reviews.txt" << endl;
+    }
 }

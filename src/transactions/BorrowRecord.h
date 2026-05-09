@@ -29,11 +29,11 @@ public:
     string getDueDate() const;
     string getReturnDate() const;
 
-    void showRecord();
+    void showRecord() const;
 
     // Additional methods needed by Admin
     bool isOverdue() const;
-    double calculateFine() const;
+    double calculateFine(double fineRate, double discountMultiplier = 1.0, const string& actualReturnDate = "") const;
 };
 
 #endif

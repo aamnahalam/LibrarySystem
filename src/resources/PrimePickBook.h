@@ -9,7 +9,6 @@ public:
     PrimePickBook(int id, string title, string author, string category);
 
     void displayDetails();
-    int getBorrowLimit();
     double getFineRate();
 };
 

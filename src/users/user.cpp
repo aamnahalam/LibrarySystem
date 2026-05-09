@@ -12,6 +12,7 @@ using namespace std;
 int convertDate(string date);
 int addDays(int date, int days);
 string formatDate(int date);
+int getDateDifference(int date1, int date2);  // Calculate days between dates
 
 static string getTierName(int tier);
 static int getMembershipIndex(const string &level);
@@ -26,8 +27,11 @@ User::User(int id, string firstName, string lastName, string email, string passw
     membership = nullptr;
     readingFrequency = 0;
     isLocked = false;
+    fineWaiverActive = false;
     borrowsToday = 0;
     lastBorrowDate = "";
+    lastBorrowMonth = "";
+    borrowsThisMonth = 0;
 }
 // Destructor
 User::~User()
@@ -38,12 +42,10 @@ User::~User()
 void User::lock()
 {
     isLocked = true;
-    cout << getFullName() << " account locked." << endl;
 }
 void User::unlock()
 {
     isLocked = false;
-    cout << getFullName() << " account unlocked." << endl;
 }
 bool User::getLockStatus() const
 {
@@ -56,31 +58,53 @@ bool User::borrowresources(Resource *r, string date)
     // Check locked
     if (isLocked)
     {
-        cout << "Access Denied: Account is locked." << endl;
         return false;
     }
     if (accountbalance < 0)
     {
-        cout << "Access Denied: Unpaid fines (" << accountbalance << "). Please recharge." << endl;
         return false;
     }
     if (r == nullptr)
     {
-        cout << "Invalid Resource." << endl;
         return false;
     }
     if (!r->getAvailability())
     {
-        cout << "Resource Not Available." << endl;
         return false;
     }
 
-    // 2 books per day limit — applies to ALL users regardless of membership
+    // Extract month from date (YYYY-MM-DD format)
+    string currentMonth = date.substr(0, 7);  // Gets YYYY-MM
+    
+    // Reset monthly counter if it's a new month
+    if (currentMonth != lastBorrowMonth)
+    {
+        lastBorrowMonth = currentMonth;
+        borrowsThisMonth = 0;
+    }
+    
+    // Check monthly limits based on membership
+    int monthlyLimit = 2;  // Default for Essential
+    if (membership != nullptr)
+    {
+        string tierName = membership->getLevelName();
+        if (tierName == "Extra")
+            monthlyLimit = 5;  // Extra: 5 books per month
+        else if (tierName == "Deluxe")
+            monthlyLimit = 10;  // Deluxe: 10 books per month
+    }
+    
+    // Check if monthly limit exceeded
+    if (borrowsThisMonth >= monthlyLimit)
+    {
+        return false;
+    }
+    
+    // Daily borrow limit: 2 books per day for all memberships
     if (date == lastBorrowDate)
     {
         if (borrowsToday >= 2)
         {
-            cout << "Daily Limit Reached: Cannot borrow more than 2 books in one day." << endl;
             return false;
         }
     }
@@ -96,7 +120,6 @@ bool User::borrowresources(Resource *r, string date)
         int limit = membership->getMaxBorrowLimit();
         if ((int)borrowedResources.size() >= limit)
         {
-            cout << "Borrow Limit Exceeded: Your membership allows max " << limit << " books at a time." << endl;
             return false;
         }
     }
@@ -104,7 +127,6 @@ bool User::borrowresources(Resource *r, string date)
     int borrowDateInt = convertDate(date);
     if (borrowDateInt == 0)
     {
-        cout << "Invalid Borrow Date." << endl;
         return false;
     }
 
@@ -112,6 +134,7 @@ bool User::borrowresources(Resource *r, string date)
     r->updateAvailability(false);
     r->incrementBorrowCount();
     borrowsToday++;
+    borrowsThisMonth++;
 
     // Track favourite categories
     string cat = r->getCategory();
@@ -127,24 +150,13 @@ bool User::borrowresources(Resource *r, string date)
 
     string dueDateStr = formatDate(addDays(borrowDateInt, 7));
 
-    cout << "Borrowing: " << r->getTitle() << " | Borrow: " << date << " | Due: " << dueDateStr << endl;
     BorrowRecord record(this, r->getResourceID(), r->getTitle(), date, dueDateStr);
     borrowHistory.push_back(record);
     readingFrequency++;
     earnpoints(5);
-    cout << "Resource Borrowed Successfully." << endl;
     return true;
 }
 
-bool User::deductFromBalance(double amount)
-{
-    if (accountbalance >= amount)
-    {
-        accountbalance -= amount;
-        return true;
-    }
-    return false;
-}
 double User::returnresources(Resource *r, string date)
 {
     bool found = false;
@@ -160,7 +172,6 @@ double User::returnresources(Resource *r, string date)
     }
     if (!found)
     {
-        cout << "Resource Not Found In Borrowed List." << endl;
         return -1.0;
     }
 
@@ -171,52 +182,49 @@ double User::returnresources(Resource *r, string date)
             int returnDate = convertDate(date);
             if (returnDate == 0)
             {
-                cout << "Invalid Return Date." << endl;
                 return -1.0;
             }
             int dueDate = convertDate(borrowHistory[i].getDueDate());
             borrowHistory[i].markAsReturned(date);
             if (returnDate > dueDate)
             {
-                int lateDays = returnDate - dueDate;
-                if (lateDays < 0)
-                    lateDays = 0;
-                double fine = lateDays * r->getFineRate();
-                if (membership != nullptr)
-                    fine *= (1.0 - membership->getFineDiscount());
-                cout << "Late Return. Days Late: " << lateDays << " | Fine: " << fine << endl;
+                // Calculate fine using BorrowRecord's method
+                double discountMultiplier = (membership != nullptr) ? 
+                    (1.0 - membership->getFineDiscount()) : 1.0;
+                
+                double fine = borrowHistory[i].calculateFine(r->getFineRate(), discountMultiplier);
+                
+                // Check if fine waiver is active
+                if (fineWaiverActive)
+                {
+                    fineWaiverActive = false;  // Use the waiver
+                    return 0.0;  // No fine charged
+                }
+                
                 accountbalance -= fine;
-                cout << "Remaining Balance: " << accountbalance << endl;
-                if (accountbalance < 0)
-                    cout << "Warning: Account in debt. Please recharge." << endl;
                 return fine;
             }
             else
             {
                 earnpoints(10);
-                cout << "Returned On Time. No Fine." << endl;
+                return 0.0;
             }
-            return 0.0;
         }
     }
-    cout << "Record Not Found In History." << endl;
     return -1.0;
 }
 void User::rechargebalance(double amount)
 {
     if (amount <= 0)
     {
-        cout << "Invalid Amount." << endl;
         return;
     }
     accountbalance += amount;
-    cout << "Balance Recharged. New Balance: " << accountbalance << endl;
 }
 
 void User::earnpoints(int points)
 {
     loyaltypoints += points;
-    cout << "Loyalty points earned: " << points << endl;
 }
 void User::setMembership(Membership *m)
 {
@@ -275,28 +283,21 @@ bool User::changeMembershipTier(int tier, bool confirm)
             tierName = "Deluxe";
             break;
         default:
-            cout << "Invalid membership choice. Choose 1, 2 or 3." << endl;
             return false;
     }
 
     if (membership != nullptr && membership->getLevelName() == tierName)
     {
-        cout << "You already have the " << tierName << " membership." << endl;
         return false;
     }
 
     if (tier < getMembershipIndex(membership ? membership->getLevelName() : string("Essential")) && !confirm)
     {
-        cout << "Warning: You are about to downgrade to " << tierName << ". "
-             << "This will lower your borrow limit and reduce benefits. "
-             << "Please confirm the downgrade to proceed." << endl;
         return false;
     }
 
     if (accountbalance < cost)
     {
-        cout << "Insufficient balance to choose the " << tierName << " plan. "
-             << "Required: Rs." << cost << ", Available: Rs." << accountbalance << endl;
         return false;
     }
 
@@ -317,16 +318,9 @@ bool User::changeMembershipTier(int tier, bool confirm)
     if (cost > 0.0)
     {
         accountbalance -= cost;
-        cout << "Rs." << cost << " deducted for " << tierName << " membership." << endl;
-        cout << "New balance: Rs." << accountbalance << endl;
-    }
-    else
-    {
-        cout << "Selected Essential (Free) tier." << endl;
     }
 
     setMembership(newMembership);
-    cout << "Membership changed successfully." << endl;
     return true;
 }
 
@@ -347,6 +341,16 @@ int User::getID() const
 {
     return id;
 }
+string User::getMembershipName() const
+{
+    return membership ? membership->getLevelName() : "Essential";
+}
+
+double User::getFineDiscount() const
+{
+    return membership ? membership->getFineDiscount() : 0.0;
+}
+
 int getTotalDays(int dateInt)
 {
     int year = dateInt / 10000;
@@ -383,6 +387,26 @@ int User::getLoyaltyPoints() const
     return loyaltypoints;
 }
 
+string User::getLastBorrowDate() const
+{
+    return lastBorrowDate;
+}
+
+int User::getBorrowsToday() const
+{
+    return borrowsToday;
+}
+
+string User::getLastBorrowMonth() const
+{
+    return lastBorrowMonth;
+}
+
+int User::getBorrowsThisMonth() const
+{
+    return borrowsThisMonth;
+}
+
 // Redeem loyalty points for discount on balance
 bool User::redeemPointsForDiscount(int pointsToRedeem)
 {
@@ -391,10 +415,8 @@ bool User::redeemPointsForDiscount(int pointsToRedeem)
         loyaltypoints -= pointsToRedeem;
         double discount = (pointsToRedeem / 100.0) * 50; // 100 points = Rs.50 discount
         accountbalance += discount;
-        cout << "Redeemed " << pointsToRedeem << " loyalty points for Rs." << discount << " balance credit!" << endl;
         return true;
     }
-    cout << "Insufficient loyalty points! You have: " << loyaltypoints << " points" << endl;
     return false;
 }
 
@@ -404,12 +426,15 @@ bool User::redeemPointsForFineFreePass()
     if (loyaltypoints >= 100)
     {
         loyaltypoints -= 100;
-        cout << "Redeemed 100 loyalty points for ONE fine-free pass!" << endl;
-        cout << "  Your next overdue fine will be waived!" << endl;
+        fineWaiverActive = true;  // Activate the waiver
         return true;
     }
-    cout << "Insufficient loyalty points for fine waiver! Need: 100, Have: " << loyaltypoints << endl;
     return false;
+}
+
+bool User::hasFineWaiverActive() const
+{
+    return fineWaiverActive;
 }
 
 void User::displayLoyaltySummary() const
@@ -427,30 +452,38 @@ void User::displayLoyaltySummary() const
     cout << string(50, '=') << endl;
 }
 
-void User::checkAndUpgradeMembership()
+bool User::checkAndUpgradeMembership()
 {
-    if (membership == nullptr) return;
+    if (membership == nullptr) return false;
 
     string currentTier = membership->getLevelName();
 
-    if (loyaltypoints >= 1000 && currentTier != "Deluxe")
+    // 1000 loyalty points -> Upgrade to next tier (Essential -> Extra -> Deluxe)
+    if (loyaltypoints >= 1000)
     {
-        cout << "\nCONGRATULATIONS! You've earned enough loyalty points for a Deluxe upgrade!" << endl;
-        setMembership(new DeluxeMembership());
-        loyaltypoints -= 500;
-        cout << "   Deluxe membership activated!" << endl;
+        if (currentTier == "Essential")
+        {
+            cout << "\n[MEMBERSHIP UPGRADE] Congratulations! You've earned Deluxe membership!" << endl;
+            setMembership(new DeluxeMembership());
+            loyaltypoints -= 1000;
+            cout << "Deluxe membership activated! (Borrow up to 10 books, 50% fine discount, free waiver, priority queue)" << endl;
+            return true;
+        }
+        else if (currentTier == "Extra")
+        {
+            cout << "\n[MEMBERSHIP UPGRADE] Congratulations! You've earned Deluxe membership!" << endl;
+            setMembership(new DeluxeMembership());
+            loyaltypoints -= 1000;
+            cout << "Deluxe membership activated! (Borrow up to 10 books, 50% fine discount, free waiver, priority queue)" << endl;
+            return true;
+        }
+        else if (currentTier == "Deluxe")
+        {
+            cout << "\n[INFO] You already have the highest membership tier (Deluxe)." << endl;
+            return false;
+        }
     }
-    else if (loyaltypoints >= 500 && currentTier == "Essential")
-    {
-        cout << "\nYou're eligible for an Extra membership upgrade!" << endl;
-        setMembership(new ExtraMembership());
-        loyaltypoints -= 200;
-        cout << "   Extra membership activated!" << endl;
-    }
-    else
-    {
-        cout << "\nNo automatic membership upgrade available at this time." << endl;
-    }
+    return false;
 }
 
 void User::displayMembershipDetails() const
@@ -568,20 +601,56 @@ static double getTierCost(int tier)
     }
 }
 
-// view  history
-void User::viewhistory()
+// Calculate the number of days between two dates in YYYYMMDD format
+int getDateDifference(int date1, int date2)
 {
-    if (borrowHistory.empty())
-    {
-        cout << " No Borrow History. " << endl;
-        return;
+    // date1 should be later than date2 (return date - due date)
+    int year1 = date1 / 10000;
+    int month1 = (date1 / 100) % 100;
+    int day1 = date1 % 100;
+    
+    int year2 = date2 / 10000;
+    int month2 = (date2 / 100) % 100;
+    int day2 = date2 % 100;
+    
+    // Days in each month (non-leap year)
+    int daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    // Check for leap year
+    auto isLeapYear = [](int year) {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    };
+    
+    // Convert to day of year
+    auto dayOfYear = [&](int year, int month, int day) {
+        int totalDays = day;
+        for (int m = 1; m < month; m++) {
+            totalDays += daysInMonth[m];
+            if (m == 2 && isLeapYear(year)) totalDays++;
+        }
+        return totalDays;
+    };
+    
+    int doy1 = dayOfYear(year1, month1, day1);
+    int doy2 = dayOfYear(year2, month2, day2);
+    
+    // If same year, simple difference
+    if (year1 == year2) {
+        return doy1 - doy2;
     }
-    cout << " Borrow History: " << endl;
-    for (int i = 0; i < (int)borrowHistory.size(); i++)
-    {
-        borrowHistory[i].showRecord();
+    
+    // Different years: add days from year2 to end of year, then days from start of year1 to date1
+    int daysInYear2 = isLeapYear(year2) ? 366 : 365;
+    int diff = (daysInYear2 - doy2) + doy1;
+    
+    // Add days from intermediate years
+    for (int y = year2 + 1; y < year1; y++) {
+        diff += isLeapYear(y) ? 366 : 365;
     }
+    
+    return diff;
 }
+
 // update profile
 void User::updateprofile(string firstName, string lastName, string email, string password)
 {
@@ -589,7 +658,6 @@ void User::updateprofile(string firstName, string lastName, string email, string
     this->lastName = lastName;
     this->email = email;
     this->password = password;
-    cout << " Profile Updated Successfully. " << endl;
 }
 
 void User::displayInfo()
@@ -609,9 +677,4 @@ void User::displayInfo()
     {
         membership->displayDetails();
     }
-}
-// operator overload for user comparison
-bool User::operator==(const User &other) const
-{
-    return id == other.id;
 }

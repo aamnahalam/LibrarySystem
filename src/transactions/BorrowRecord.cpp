@@ -49,23 +49,7 @@ string BorrowRecord::getReturnDate() const
     return returnDate;
 }
 
-static bool parseDateString(const string &date, int &year, int &month, int &day)
-{
-    if (date.size() != 10 || date[4] != '-' || date[7] != '-')
-        return false;
-    try {
-        year = stoi(date.substr(0, 4));
-        month = stoi(date.substr(5, 2));
-        day = stoi(date.substr(8, 2));
-    } catch (const exception &) {
-        return false;
-    }
-    if (month < 1 || month > 12 || day < 1 || day > 31)
-        return false;
-    return true;
-}
-
-void BorrowRecord::showRecord() {
+void BorrowRecord::showRecord() const {
     cout << "User: " << user->getFullName() << " (ID: " << user->getID() << ")" << endl;
     cout << "Email: " << user->getEmail() << endl;
     cout << "Resource: " << resourceName << endl;
@@ -110,37 +94,50 @@ bool BorrowRecord::isOverdue() const
     return currentDay > dueDay;
 }
 
-double BorrowRecord::calculateFine() const
+double BorrowRecord::calculateFine(double fineRate, double discountMultiplier, const string& actualReturnDate) const
 {
-    if (isReturned)
-        return 0.0;
+    string compareDate;
+    if (!actualReturnDate.empty()) {
+        compareDate = actualReturnDate;
+    } else if (isReturned) {
+        compareDate = returnDate;
+    } else {
+        time_t now = time(0);
+        tm *currentTime = localtime(&now);
+        int currentYear = 1900 + currentTime->tm_year;
+        int currentMonth = 1 + currentTime->tm_mon;
+        int currentDay = currentTime->tm_mday;
+
+        compareDate = to_string(currentYear) + "-" +
+                      (currentMonth < 10 ? "0" : "") + to_string(currentMonth) + "-" +
+                      (currentDay < 10 ? "0" : "") + to_string(currentDay);
+    }
 
     int dueYear, dueMonth, dueDay;
     if (!parseDateString(dueDate, dueYear, dueMonth, dueDay))
         return 0.0;
 
-    // Get current date
-    time_t now = time(0);
-    tm *currentTime = localtime(&now);
-    int currentYear = 1900 + currentTime->tm_year;
-    int currentMonth = 1 + currentTime->tm_mon;
-    int currentDay = currentTime->tm_mday;
+    // Parse comparison date
+    int compYear = stoi(compareDate.substr(0, 4));
+    int compMonth = stoi(compareDate.substr(5, 2));
+    int compDay = stoi(compareDate.substr(8, 2));
 
     // Calculate days overdue
     int daysOverdue = 0;
-    if (currentYear > dueYear)
+    if (compYear > dueYear)
     {
-        daysOverdue = (currentYear - dueYear) * 365;
+        daysOverdue = (compYear - dueYear) * 365;
     }
-    if (currentMonth > dueMonth)
+    if (compMonth > dueMonth)
     {
-        daysOverdue += (currentMonth - dueMonth) * 30;
+        daysOverdue += (compMonth - dueMonth) * 30;
     }
-    if (currentDay > dueDay)
+    if (compDay > dueDay)
     {
-        daysOverdue += (currentDay - dueDay);
+        daysOverdue += (compDay - dueDay);
     }
 
-    // Fine rate: $1 per day
-    return daysOverdue > 0 ? daysOverdue * 1.0 : 0.0;
+    double fine = daysOverdue > 0 ? daysOverdue * fineRate : 0.0;
+    fine *= discountMultiplier;
+    return fine;
 }

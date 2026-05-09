@@ -47,15 +47,6 @@ public:
     bool borrowResource(int resourceID, string date);
     double returnResource(int resourceID, string date);
 
-    // Resource search & filters
-    vector<Resource *> searchResource(string keyword);
-    vector<Resource *> filterResources(string category);
-    vector<Resource *> filterByAvailability();
-    vector<Resource *> filterByNewArrivals();
-    vector<Resource *> filterByMostBorrowed();
-    vector<Resource *> filterByRating();
-    vector<Resource *> filterByUserPreference(User *u);
-
     // Reporting
     void showAllUsers() const;
     void showAllAdmins() const;

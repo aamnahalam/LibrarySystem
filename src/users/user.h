@@ -16,11 +16,14 @@ class User : public Person {
     friend class LibrarySystem;
 private:
     bool isLocked;
+    bool fineWaiverActive;
     int loyaltypoints;
     int readingFrequency;
     double accountbalance;
     string lastBorrowDate;
     int borrowsToday;
+    string lastBorrowMonth;
+    int borrowsThisMonth;
     Membership* membership;
     vector<Resource*> borrowedResources;
     vector<BorrowRecord> borrowHistory;
@@ -34,7 +37,6 @@ public:
     // Core Logic Methods
     bool borrowresources(Resource* r, string date);
     bool getLockStatus() const;
-    bool deductFromBalance(double amount);
     double returnresources(Resource* r, string date);
     void rechargebalance(double amount);
     void earnpoints(int points);
@@ -42,7 +44,6 @@ public:
     void lock();
     void unlock();
     // Profile & History Methods
-    void viewhistory();
     void updateprofile(string firstName, string lastName, string email, string password);
     void displayInfo() override;
 
@@ -54,21 +55,25 @@ public:
     double getAccountBalance() const;
     string getPreferredCategory() const;
     int getLoyaltyPoints() const;
+    string getMembershipName() const;
+    double getFineDiscount() const;
+    string getLastBorrowDate() const;
+    int getBorrowsToday() const;
+    string getLastBorrowMonth() const;
+    int getBorrowsThisMonth() const;
     
     // Loyalty Points Redemption
     bool redeemPointsForDiscount(int pointsToRedeem);
     bool redeemPointsForFineFreePass();
+    bool hasFineWaiverActive() const;
     void displayLoyaltySummary() const;
     
     // Membership Upgrade
-    void checkAndUpgradeMembership();
+    bool checkAndUpgradeMembership();
     void displayMembershipDetails() const;
     bool changeMembershipTier(int tier, bool confirm = true);
     string getMembershipChangeNotice(int tier) const;
     void showMembershipOptions() const;
-    
-    // Operator Overloading
-    bool operator==(const User& other) const;
 
     const vector<BorrowRecord>& getBorrowHistory() const;
 };

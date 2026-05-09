@@ -11,11 +11,6 @@ void ClassicShelfBook::displayDetails()
     cout << "Author: " << author << endl;
 }
 
-int ClassicShelfBook::getBorrowLimit()
-{
-    return 2;
-}
-
 double ClassicShelfBook::getFineRate()
 {
     return 3.0;
