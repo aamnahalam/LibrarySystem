@@ -1,3 +1,6 @@
 ID | Name | Email | Password | Balance | Membership | LoyaltyPoints | LastBorrowDate | BorrowsToday | LastBorrowMonth | BorrowsThisMonth
-0 | maryam ali | maryam@email.com | 123 | 3.97197e-304 | Deluxe | 5 |    | 0 |    | 0
-0 | fatima ali | fati@email.com | 123456 | 3.97197e-304 | Essential | 5 | 2026-05-08 | 1 | 2026-05 | 1
+1001 | Rafay  | rafay@gmail.com | rafay2 | 229 | Deluxe | 30 |  | 0 |  | 0
+1002 | Depesh jewani | jeewani@gmail.com | jewani | 590 | Deluxe | 30 |  | 0 |  | 0
+1003 | Ali Irsahd | ali@gmail.com | alikhan | 100 | Essential | 0 |  | 0 |  | 0
+1004 | shaffay zia | shaffay@gmail.com | shaffay | 500 | Deluxe | 60 |  | 0 |  | 0
+1005 | aamnah alam | aamnah@gmail.com | aamnah | 900 | Deluxe | 70 | 2026-05-08 | 2 | 2026-05 | 2

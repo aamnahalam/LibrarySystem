@@ -1,8 +1,10 @@
 ID | Type | Title | Author | Category | Available | Rating | BorrowCount
-1001 | PrimePick | The Good Gatsby | F. Scott Fitzgerald | Fiction | 0 | 3.25 | 2
-1002 | PrimePick | Moby Dick | Herman Melville | Adventure | 0 | 1.5 | 1
-1003 | ClassicShelf | To Kill a Mockingbird | Harper Lee | Fiction | 0 | 2.5 | 1
-1004 | ClassicShelf | Pride and Prejudice | Jane Austen | Romance | 0 | 0 | 1
-1005 | BudgetPick | 1984 | George Orwell | Dystopian | 0 | 0 | 1
-1006 | BudgetPick | Brave New World | Aldous Huxley | Science Fiction | 0 | 0 | 1
-5007 | PrimePick | Better than movies | Lynn Painter | Romcom | 1 | 0 | 0
+5001 | BudgetPick | Harry Potter | J.K ROWLING | FICTION | 0 | 3.9 | 5
+5002 | PrimePick | The Hobbit | J.R.R TOLKIEN | FANTASY | 0 | 4.7 | 3
+5003 | ClassicShelf | Pride and Prejudice | Jane Austen | ROMANCE | 0 | 4.9 | 3
+5004 | BudgetPick | The Great Gatsby | F. Scott Fitzgerald | FICTION | 1 | 4.5 | 2
+5005 | PrimePick | 1984 | George Orwell | SCI-FI | 0 | 4.6 | 2
+5006 | ClassicShelf | To Kill a Mockingbird | Harper Lee | FICTION | 1 | 4.9 | 3
+5013 | BudgetPick | Atomic Habits | Depesh Jewani | Lessons | 1 | 4 | 4
+5027 | ClassicShelf | forty rules of love | depesh | love | 0 | 1.5 | 2
+5009 | ClassicShelf | Peer E Kamil | Abdul Wahab | Urdu | 1 | 5 | 1
