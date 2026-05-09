@@ -1,0 +1,2 @@
+ID | Name | Email | Password | Balance | Membership | LoyaltyPoints
+1 | maryam ali | maryam@email.com | 123 | 250 | Essential | 5

@@ -1,0 +1,2 @@
+UserID | ResourceID | ResourceName | BorrowDate | DueDate | Returned | ReturnDate
+1 | 1001 | The Good Gatsby | 2026-05-08 | 2026-05-15 | 0 | 

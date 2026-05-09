@@ -71,10 +71,9 @@ bool BorrowRecord::isOverdue() const
     if (isReturned)
         return false;
 
-    // Parse due date (format: YYYY-MM-DD)
-    int dueYear = stoi(dueDate.substr(0, 4));
-    int dueMonth = stoi(dueDate.substr(5, 2));
-    int dueDay = stoi(dueDate.substr(8, 2));
+    int dueYear, dueMonth, dueDay;
+    if (!parseDateString(dueDate, dueYear, dueMonth, dueDay))
+        return false;
 
     // Get current date
     time_t now = time(0);
@@ -114,10 +113,9 @@ double BorrowRecord::calculateFine(double fineRate, double discountMultiplier, c
                       (currentDay < 10 ? "0" : "") + to_string(currentDay);
     }
 
-    // Parse due date
-    int dueYear = stoi(dueDate.substr(0, 4));
-    int dueMonth = stoi(dueDate.substr(5, 2));
-    int dueDay = stoi(dueDate.substr(8, 2));
+    int dueYear, dueMonth, dueDay;
+    if (!parseDateString(dueDate, dueYear, dueMonth, dueDay))
+        return 0.0;
 
     // Parse comparison date
     int compYear = stoi(compareDate.substr(0, 4));
