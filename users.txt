@@ -1,0 +1,3 @@
+ID | Name | Email | Password | Balance | Membership | LoyaltyPoints | LastBorrowDate | BorrowsToday | LastBorrowMonth | BorrowsThisMonth
+0 | maryam ali | maryam@email.com | 123 | 3.97197e-304 | Deluxe | 5 |    | 0 |    | 0
+0 | fatima ali | fati@email.com | 123456 | 3.97197e-304 | Essential | 5 | 2026-05-08 | 1 | 2026-05 | 1

@@ -1,0 +1,1 @@
+UserID | ResourceID | ResourceName | BorrowDate | DueDate | Returned | ReturnDate
