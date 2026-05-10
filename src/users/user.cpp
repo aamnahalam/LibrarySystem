@@ -363,13 +363,6 @@ string User::getFullName() const
     return firstName + " " + lastName;
 }
 
-string User::getPreferredCategory() const
-{
-    if (!favouriteCategories.empty())
-        return favouriteCategories.back();
-    return "";
-}
-
 const vector<BorrowRecord> &User::getBorrowHistory() const { return borrowHistory; }
 
 int User::getLoyaltyPoints() const

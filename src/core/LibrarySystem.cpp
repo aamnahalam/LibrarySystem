@@ -551,6 +551,22 @@ void LibrarySystem::loadData() {
         cout << "Resource data loaded from resources.txt" << endl;
     }
 
+    // Seed initial books if none exist
+    if (resources.empty()) {
+        cout << "No resources found. Seeding default library books." << endl;
+        resources.push_back(new PrimePickBook(5001, "Harry Potter", "J.K. Rowling", "Fantasy"));
+        resources.push_back(new PrimePickBook(5002, "The Hobbit", "J.R.R. Tolkien", "Fantasy"));
+        resources.push_back(new PrimePickBook(5003, "Pride and Prejudice", "Jane Austen", "Romance"));
+        resources.push_back(new ClassicShelfBook(5004, "1984", "George Orwell", "Dystopian"));
+        resources.push_back(new ClassicShelfBook(5005, "To Kill a Mockingbird", "Harper Lee", "Fiction"));
+        resources.push_back(new ClassicShelfBook(5006, "The Great Gatsby", "F. Scott Fitzgerald", "Fiction"));
+        resources.push_back(new BudgetPickBook(5007, "Atomic Habits", "James Clear", "SelfHelp"));
+        resources.push_back(new BudgetPickBook(5008, "Sapiens", "Yuval Noah Harari", "History"));
+        resources.push_back(new BudgetPickBook(5009, "Peer E Kamil", "Umera Ahmad", "Fiction"));
+        resources.push_back(new PrimePickBook(5010, "The Midnight Library", "Matt Haig", "Fantasy"));
+        saveData();
+    }
+
     // Load Admins
     ifstream adminFile("admins.txt");
     if (!adminFile.is_open())

@@ -53,7 +53,6 @@ public:
     string getFullName() const;
     string getPassword() const;
     double getAccountBalance() const;
-    string getPreferredCategory() const;
     int getLoyaltyPoints() const;
     string getMembershipName() const;
     double getFineDiscount() const;
