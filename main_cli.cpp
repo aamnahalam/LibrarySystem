@@ -39,7 +39,7 @@ string getCurrentDate() {
     return string(buffer);
 }
 
-// Helper function to calculate due date (14 days from borrow date)
+// Helper function to calculate due date (7 days from borrow date)
 string getDueDate(string borrowDate) {
     int year, month, day;
     sscanf(borrowDate.c_str(), "%d-%d-%d", &year, &month, &day);
@@ -48,7 +48,7 @@ string getDueDate(string borrowDate) {
     struct tm* timeinfo = localtime(&t);
     timeinfo->tm_year = year - 1900;
     timeinfo->tm_mon = month - 1;
-    timeinfo->tm_mday = day + 14;  // Add 14 days
+    timeinfo->tm_mday = day + 7;  // Add 7 days
     mktime(timeinfo);
     
     char buffer[11];
@@ -531,7 +531,7 @@ void borrowBook() {
             cout << "Title: " << book->getTitle() << "\n";
             cout << "Author: " << book->getAuthor() << "\n";
             cout << "Borrow Date: " << borrowDate << "\n";
-            cout << "Due Date: " << dueDate << " (14 days)\n";
+            cout << "Due Date: " << dueDate << " (7 days)\n";
         } else {
             cout << "\n[ERROR] Could not borrow book. You may have exceeded your borrowing limit.\n";
         }
@@ -1490,8 +1490,14 @@ void userSession() {
         displayUserMenu();
         
         int choice;
-        cin >> choice;
-        cin.ignore();
+        if (!(cin >> choice)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "\nInvalid input. Please enter a number.\n";
+            pause();
+            continue;
+        }
+        cin.ignore(10000, '\n');
         
         switch (choice) {
             case 1: viewBooks(); break;
@@ -1522,8 +1528,14 @@ void adminSession() {
         displayAdminMenu();
         
         int choice;
-        cin >> choice;
-        cin.ignore();
+        if (!(cin >> choice)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "\n[ERROR] Invalid input. Please enter a number.\n";
+            pause();
+            continue;
+        }
+        cin.ignore(10000, '\n');
         
         switch (choice) {
             case 1: addBook(); break;

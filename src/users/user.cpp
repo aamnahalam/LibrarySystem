@@ -12,7 +12,6 @@ using namespace std;
 int convertDate(string date);
 int addDays(int date, int days);
 string formatDate(int date);
-int getDateDifference(int date1, int date2);  // Calculate days between dates
 
 static string getTierName(int tier);
 static int getMembershipIndex(const string &level);
@@ -351,15 +350,6 @@ double User::getFineDiscount() const
     return membership ? membership->getFineDiscount() : 0.0;
 }
 
-int getTotalDays(int dateInt)
-{
-    int year = dateInt / 10000;
-    int month = (dateInt / 100) % 100;
-    int day = dateInt % 100;
-
-    // 30-day assumption consistently
-    return (year * 360) + (month * 30) + day;
-}
 string User::getEmail() const
 {
     return email;
@@ -371,13 +361,6 @@ string User::getPassword() const
 string User::getFullName() const
 {
     return firstName + " " + lastName;
-}
-
-string User::getPreferredCategory() const
-{
-    if (!favouriteCategories.empty())
-        return favouriteCategories.back();
-    return "";
 }
 
 const vector<BorrowRecord> &User::getBorrowHistory() const { return borrowHistory; }
@@ -599,56 +582,6 @@ static double getTierCost(int tier)
         default:
             return 0.0;
     }
-}
-
-// Calculate the number of days between two dates in YYYYMMDD format
-int getDateDifference(int date1, int date2)
-{
-    // date1 should be later than date2 (return date - due date)
-    int year1 = date1 / 10000;
-    int month1 = (date1 / 100) % 100;
-    int day1 = date1 % 100;
-    
-    int year2 = date2 / 10000;
-    int month2 = (date2 / 100) % 100;
-    int day2 = date2 % 100;
-    
-    // Days in each month (non-leap year)
-    int daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    
-    // Check for leap year
-    auto isLeapYear = [](int year) {
-        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-    };
-    
-    // Convert to day of year
-    auto dayOfYear = [&](int year, int month, int day) {
-        int totalDays = day;
-        for (int m = 1; m < month; m++) {
-            totalDays += daysInMonth[m];
-            if (m == 2 && isLeapYear(year)) totalDays++;
-        }
-        return totalDays;
-    };
-    
-    int doy1 = dayOfYear(year1, month1, day1);
-    int doy2 = dayOfYear(year2, month2, day2);
-    
-    // If same year, simple difference
-    if (year1 == year2) {
-        return doy1 - doy2;
-    }
-    
-    // Different years: add days from year2 to end of year, then days from start of year1 to date1
-    int daysInYear2 = isLeapYear(year2) ? 366 : 365;
-    int diff = (daysInYear2 - doy2) + doy1;
-    
-    // Add days from intermediate years
-    for (int y = year2 + 1; y < year1; y++) {
-        diff += isLeapYear(y) ? 366 : 365;
-    }
-    
-    return diff;
 }
 
 // update profile
