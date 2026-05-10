@@ -24,7 +24,6 @@ User::User(int id, string firstName, string lastName, string email, string passw
     accountbalance = balance;
     loyaltypoints = 0;
     membership = nullptr;
-    readingFrequency = 0;
     isLocked = false;
     fineWaiverActive = false;
     borrowsToday = 0;
@@ -151,7 +150,6 @@ bool User::borrowresources(Resource *r, string date)
 
     BorrowRecord record(this, r->getResourceID(), r->getTitle(), date, dueDateStr);
     borrowHistory.push_back(record);
-    readingFrequency++;
     earnpoints(5);
     return true;
 }
