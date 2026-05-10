@@ -18,7 +18,6 @@ private:
     bool isLocked;
     bool fineWaiverActive;
     int loyaltypoints;
-    int readingFrequency;
     double accountbalance;
     string lastBorrowDate;
     int borrowsToday;
