@@ -62,6 +62,181 @@ string getDueDate(string borrowDate) {
     return string(buffer);
 }
 
+// ============ INPUT VALIDATION HELPER FUNCTIONS ============
+
+// Validate and get integer input within range
+int getValidIntInput(int minVal, int maxVal, const string& prompt = "") {
+    int input;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        
+        if (cin >> input) {
+            if (input >= minVal && input <= maxVal) {
+                cin.ignore(10000, '\n');
+                return input;
+            } else {
+                cout << "[INPUT ERROR] Please enter a number between " << minVal << " and " << maxVal << ".\n";
+                cin.clear();
+                cin.ignore(10000, '\n');
+            }
+        } else {
+            cout << "[INPUT ERROR] Invalid input. Please enter a valid number.\n";
+            cin.clear();
+            cin.ignore(10000, '\n');
+        }
+    }
+}
+
+// Validate and get double input (for amounts, must be positive)
+double getValidDoubleInput(double minVal = 0.0, const string& prompt = "") {
+    double input;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        
+        if (cin >> input) {
+            if (input >= minVal) {
+                cin.ignore(10000, '\n');
+                return input;
+            } else {
+                cout << "[INPUT ERROR] Amount must be a positive number greater than or equal to " << minVal << ".\n";
+                cin.clear();
+                cin.ignore(10000, '\n');
+            }
+        } else {
+            cout << "[INPUT ERROR] Invalid input. Please enter a valid number.\n";
+            cin.clear();
+            cin.ignore(10000, '\n');
+        }
+    }
+}
+
+// Validate email format
+bool isValidEmail(const string& email) {
+    // Check for @ symbol
+    size_t atPos = email.find('@');
+    if (atPos == string::npos || atPos == 0 || atPos == email.length() - 1) {
+        return false;
+    }
+    
+    // Check for domain
+    size_t dotPos = email.find('.', atPos);
+    if (dotPos == string::npos || dotPos == atPos + 1 || dotPos == email.length() - 1) {
+        return false;
+    }
+    
+    // Check for valid characters before @
+    for (size_t i = 0; i < atPos; i++) {
+        char c = email[i];
+        if (!isalnum(c) && c != '.' && c != '_' && c != '-') {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Validate date format (YYYY-MM-DD)
+bool isValidDate(const string& date) {
+    if (date.length() != 10 || date[4] != '-' || date[7] != '-') {
+        return false;
+    }
+    
+    for (int i = 0; i < 10; i++) {
+        if (i != 4 && i != 7) {
+            if (!isdigit(date[i])) return false;
+        }
+    }
+    
+    int year = stoi(date.substr(0, 4));
+    int month = stoi(date.substr(5, 2));
+    int day = stoi(date.substr(8, 2));
+    
+    if (year < 2000 || year > 2100) return false;
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    
+    return true;
+}
+
+// Get valid email input with validation
+string getValidEmail(const string& prompt = "") {
+    string email;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        getline(cin, email);
+        
+        if (email.empty()) {
+            cout << "[INPUT ERROR] Email cannot be empty.\n";
+            continue;
+        }
+        
+        if (isValidEmail(email)) {
+            return email;
+        } else {
+            cout << "[INPUT ERROR] Invalid email format. Must contain @ and valid domain (e.g., user@example.com)\n";
+        }
+    }
+}
+
+// Get valid date input with validation
+string getValidDate(const string& prompt = "") {
+    string date;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        getline(cin, date);
+        
+        if (date.empty()) {
+            cout << "[INPUT ERROR] Date cannot be empty.\n";
+            continue;
+        }
+        
+        if (isValidDate(date)) {
+            return date;
+        } else {
+            cout << "[INPUT ERROR] Invalid date format. Use YYYY-MM-DD (e.g., 2026-05-14)\n";
+        }
+    }
+}
+
+// Get valid yes/no input
+bool getValidYesNoInput(const string& prompt = "") {
+    string input;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        getline(cin, input);
+        
+        if (input == "y" || input == "Y") {
+            return true;
+        } else if (input == "n" || input == "N") {
+            return false;
+        } else {
+            cout << "[INPUT ERROR] Invalid input. Please enter 'y' for yes or 'n' for no.\n";
+        }
+    }
+}
+
+// Get valid book ID (allows 0 as special "go back" option, or 5000-9999)
+int getValidBookID(const string& prompt = "") {
+    int input;
+    while (true) {
+        if (!prompt.empty()) cout << prompt;
+        if (cin >> input) {
+            if (input == 0 || (input >= 5000 && input <= 9999)) {
+                cin.ignore(10000, '\n');
+                return input;
+            } else {
+                cout << "[INPUT ERROR] Please enter 0 to go back or a book ID between 5000 and 9999.\n";
+                cin.clear();
+                cin.ignore(10000, '\n');
+            }
+        } else {
+            cout << "[INPUT ERROR] Invalid input. Please enter a valid number.\n";
+            cin.clear();
+            cin.ignore(10000, '\n');
+        }
+    }
+}
+
 void submitReview(Resource* book) {
     clearScreen();
     cout << "============================================================\n";
@@ -140,11 +315,7 @@ void viewBookReviews() {
         cout << " (" << fixed << setprecision(1) << r->getAverageRating() << "/5.0)\n";
     }
     
-    cout << "\nEnter Book ID to view reviews (0 to go back): ";
-    int bookId;
-    cin >> bookId;
-    cin.ignore();
-    
+    int bookId = getValidBookID("\nEnter Book ID to view reviews (0 to go back): ");
     if (bookId == 0) return;
     
     Resource* selectedBook = nullptr;
@@ -175,7 +346,7 @@ void displayMainMenu() {
     cout << "2. Admin Login\n";
     cout << "3. Register New User\n";
     cout << "4. Exit\n";
-    cout << "\nSelect option (1-4): ";
+    cout << "\n";
 }
 
 // ==================== USER FEATURES ====================
@@ -223,32 +394,37 @@ void registerUser() {
     
     cout << "First Name: ";
     getline(cin, firstName);
+    if (firstName.empty()) {
+        cout << "\n[INPUT ERROR] First name cannot be empty.\n";
+        pause();
+        return;
+    }
+    
     cout << "Last Name: ";
     getline(cin, lastName);
-    cout << "Email: ";
-    getline(cin, email);
-    cout << "Password (min 6 chars): ";
-    getline(cin, password);
+    if (lastName.empty()) {
+        cout << "\n[INPUT ERROR] Last name cannot be empty.\n";
+        pause();
+        return;
+    }
     
-    // Validate and input balance with error handling
-    bool validBalance = false;
-    while (!validBalance) {
-        cout << "Initial Balance ($): ";
-        if (cin >> balance) {
-            if (balance >= 0) {
-                validBalance = true;
-            } else {
-                cout << "Balance must be non-negative.\n";
-                cin.clear();
-                cin.ignore(10000, '\n');
-            }
+    email = getValidEmail("Email: ");
+    
+    // Get and validate password
+    while (true) {
+        cout << "Password (min 6 chars): ";
+        getline(cin, password);
+        if (password.empty()) {
+            cout << "[INPUT ERROR] Password cannot be empty.\n";
+        } else if (password.length() < 6) {
+            cout << "[INPUT ERROR] Password must be at least 6 characters long.\n";
         } else {
-            cout << "Please enter a valid number.\n";
-            cin.clear();
-            cin.ignore(10000, '\n');
+            break;
         }
     }
-    cin.ignore(10000, '\n');
+    
+    // Validate and input balance with error handling
+    balance = getValidDoubleInput(0.0, "Initial Balance ($): ");
     
     try {
         globalSystem->registerUser(firstName, lastName, email, password, balance);
@@ -290,7 +466,7 @@ void displayUserMenu() {
     cout << "18. Recharge Account Balance\n";
     cout << "19. View Book Reviews\n";
     cout << "20. Logout\n";
-    cout << "\nSelect option (1-20): ";
+    cout << "\n";
 }
 
 void viewBooks() {
@@ -345,11 +521,7 @@ void viewBookDetails() {
              << setw(15) << r->getAuthor().substr(0, 14) << "\n";
     }
     
-    cout << "\nEnter Book ID to view details (0 to cancel): ";
-    int bookId;
-    cin >> bookId;
-    cin.ignore();
-    
+    int bookId = getValidBookID("\nEnter Book ID to view details (0 to cancel): ");
     if (bookId == 0) {
         return;
     }
@@ -487,10 +659,7 @@ void borrowBook() {
     }
     
     cout << "\n";
-    int bookId;
-    cout << "Enter Book ID to borrow: ";
-    cin >> bookId;
-    cin.ignore();
+    int bookId = getValidIntInput(5000, 9999, "Enter Book ID to borrow: ");
     
     Resource* book = nullptr;
     for (auto& r : globalSystem->resources) {
@@ -501,13 +670,13 @@ void borrowBook() {
     }
     
     if (!book) {
-        cout << "\n[ERROR] Book not found.\n";
+        cout << "\n[ERROR] Book ID " << bookId << " not found. Please check the ID and try again.\n";
         pause();
         return;
     }
     
     if (!book->getAvailability()) {
-        cout << "\n[ERROR] Book is not available.\n";
+        cout << "\n[ERROR] Book is not available for borrowing. Please reserve it instead.\n";
         pause();
         return;
     }
@@ -573,10 +742,7 @@ void returnBook() {
     }
     
     cout << "\n";
-    int bookId;
-    cout << "Enter Book ID to return: ";
-    cin >> bookId;
-    cin.ignore();
+    int bookId = getValidIntInput(5000, 9999, "Enter Book ID to return: ");
     
     Resource* book = nullptr;
     for (auto& r : globalSystem->resources) {
@@ -794,31 +960,13 @@ void rechargeBalance() {
     
     cout << "Current Balance: $" << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n\n";
     
-    double amount = 0;
-    bool validAmount = false;
-    
-    while (!validAmount) {
-        cout << "Amount to add: $";
-        if (cin >> amount) {
-            if (amount > 0) {
-                validAmount = true;
-            } else {
-                cout << "[ERROR] Amount must be greater than zero.\n";
-                cin.clear();
-                cin.ignore(10000, '\n');
-            }
-        } else {
-            cout << "[ERROR] Please enter a valid number.\n";
-            cin.clear();
-            cin.ignore(10000, '\n');
-        }
-    }
-    cin.ignore(10000, '\n');
+    double amount = getValidDoubleInput(0.01, "Amount to add ($): ");
     
     try {
         currentUser->rechargebalance(amount);
         globalSystem->saveData();
         cout << "\nBalance recharged successfully!\n";
+        cout << "Amount Added: $" << fixed << setprecision(2) << amount << "\n";
         cout << "New Balance: $" << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
     } catch (const exception& e) {
         cout << "\n[ERROR] Error: " << e.what() << "\n";
@@ -846,27 +994,15 @@ void changeMembershipTier() {
         currentUser->showMembershipOptions();
         cout << "\n";
         
-        int tier;
-        cout << "Select membership tier (1-3): ";
-        cin >> tier;
-        cin.ignore();
-        
-        if (tier < 1 || tier > 3) {
-            cout << "\n[ERROR] Invalid choice. Please select 1, 2, or 3.\n";
-            pause();
-            return;
-        }
+        int tier = getValidIntInput(1, 3, "Select membership tier (1-3): ");
         
         string notice = currentUser->getMembershipChangeNotice(tier);
         cout << "\n" << notice << "\n\n";
         
         if (notice.find("Warning") != string::npos || notice.find("costs") != string::npos) {
-            cout << "Do you want to proceed? (y/n): ";
-            char confirm;
-            cin >> confirm;
-            cin.ignore();
+            bool confirm = getValidYesNoInput("Do you want to proceed? (y/n): ");
             
-            if (confirm != 'y' && confirm != 'Y') {
+            if (!confirm) {
                 cout << "\nMembership change cancelled.\n";
                 pause();
                 return;
@@ -1020,7 +1156,7 @@ void reserveBook() {
         bool success = globalSystem->reserveBook(bookId, reservationDate);
         
         if (success) {
-            cout << "\n✓ Book reserved successfully!\n";
+            cout << "\n[SUCCESS] Book reserved successfully!\n";
             cout << "Title: " << book->getTitle() << "\n";
             cout << "Reservation Date: " << reservationDate << "\n";
             cout << "\nYou will be notified when this book becomes available.\n";
@@ -1078,10 +1214,7 @@ void viewMyReservations() {
         cout << "1. Cancel a pending reservation\n";
         cout << "2. Collect a ready (fulfilled) book\n";
         cout << "3. Skip\n";
-        cout << "Select option (1-3): ";
-        int option;
-        cin >> option;
-        cin.ignore();
+        int option = getValidIntInput(1, 3, "Select option (1-3): ");
         
         if (option == 1) {
             // Cancel pending reservation
@@ -1094,7 +1227,7 @@ void viewMyReservations() {
                 try {
                     bool cancelled = globalSystem->cancelReservation(resourceID);
                     if (cancelled) {
-                        cout << "\n✓ Reservation cancelled successfully!\n";
+                        cout << "\nReservation cancelled successfully!\n";
                     }
                 } catch (const LibraryException& e) {
                     cout << "\n[ERROR] " << e.getMessage() << "\n";
@@ -1102,10 +1235,7 @@ void viewMyReservations() {
             }
         } else if (option == 2) {
             // Collect ready book
-            int resourceID;
-            cout << "Enter Book ID to collect (must show [READY]): ";
-            cin >> resourceID;
-            cin.ignore();
+            int resourceID = getValidIntInput(5000, 9999, "Enter Book ID to collect (must show [READY]): ");
             
             // Find the ready reservation
             Reservation* readyRes = nullptr;
@@ -1283,7 +1413,7 @@ void displayAdminMenu() {
     cout << "11. Update User Membership\n";
     cout << "12. Manage Reservations\n";
     cout << "13. Logout\n";
-    cout << "\nSelect option (1-13): ";
+    cout << "\n";
 }
 
 void addBook() {
@@ -1711,10 +1841,7 @@ void updateUserMembership() {
     cout << "  2 = Extra    (5 books, 25% discount, Premium)\n";
     cout << "  3 = Deluxe   (10 books, 50% discount, VIP)\n\n";
     
-    cout << "Select new membership tier (1-3): ";
-    cin >> tier;
-    cin.ignore();
-    
+    tier = getValidIntInput(1, 3, "Select new membership tier (1-3): ");
     if (tier < 1 || tier > 3) {
         cout << "\n[ERROR] Invalid tier. Must be 1, 2, or 3.\n";
         pause();
@@ -1858,7 +1985,7 @@ void adminManageReservations() {
                     }
                     
                     globalSystem->saveData();
-                    cout << "\n✓ Reservation cancelled and queue updated.\n";
+                    cout << "\nReservation cancelled and queue updated.\n";
                     break;
                 }
             }
@@ -1890,7 +2017,7 @@ void adminManageReservations() {
             
             // Call the normal fulfillNextReservation which checks daily limit using TODAY's date
             globalSystem->fulfillNextReservation(bookId, todayDate);
-            cout << "\n✓ Fulfillment processed with daily limit check.\n";
+            cout << "\nFulfillment processed with daily limit check.\n";
         }
         pause();
     }
@@ -1910,15 +2037,7 @@ void userSession() {
         clearScreen();
         displayUserMenu();
         
-        int choice;
-        if (!(cin >> choice)) {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "\nInvalid input. Please enter a number.\n";
-            pause();
-            continue;
-        }
-        cin.ignore(10000, '\n');
+        int choice = getValidIntInput(1, 20, "Select option (1-20): ");
         
         switch (choice) {
             case 1: viewBooks(); break;
@@ -1941,7 +2060,6 @@ void userSession() {
             case 18: rechargeBalance(); break;
             case 19: viewBookReviews(); break;
             case 20: userLogout(); break;
-            default: cout << "\n[ERROR] Invalid option.\n"; pause();
         }
     }
 }
@@ -1951,15 +2069,7 @@ void adminSession() {
         clearScreen();
         displayAdminMenu();
         
-        int choice;
-        if (!(cin >> choice)) {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "\n[ERROR] Invalid input. Please enter a number.\n";
-            pause();
-            continue;
-        }
-        cin.ignore(10000, '\n');
+        int choice = getValidIntInput(1, 13, "Select option (1-13): ");
         
         switch (choice) {
             case 1: addBook(); break;
@@ -1975,7 +2085,6 @@ void adminSession() {
             case 11: updateUserMembership(); break;
             case 12: adminManageReservations(); break;
             case 13: adminLogout(); break;
-            default: cout << "\n[ERROR] Invalid option.\n"; pause();
         }
     }
 }
@@ -1991,9 +2100,7 @@ int main() {
     while (running) {
         displayMainMenu();
         
-        int choice;
-        cin >> choice;
-        cin.ignore();
+        int choice = getValidIntInput(1, 4, "Select option (1-4): ");
         
         switch (choice) {
             case 1:
@@ -2011,9 +2118,6 @@ int main() {
                 running = false;
                 cout << "\nThank you for using Library Management System!\n";
                 break;
-            default:
-                cout << "\n[ERROR] Invalid option. Please try again.\n";
-                pause();
         }
     }
     

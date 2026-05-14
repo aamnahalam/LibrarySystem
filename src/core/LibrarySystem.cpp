@@ -326,151 +326,152 @@ void LibrarySystem::logout()
 // Save data
 void LibrarySystem::saveData()
 {
-    // Save Users
-    ofstream userFile("users.txt");
-    if (!userFile.is_open())
-    {
-        cout << "Error: Cannot open users.txt" << endl;
-        return;
-    }
-    userFile << "ID | Name | Email | Password | Balance | Membership | LoyaltyPoints | LastBorrowDate | BorrowsToday | LastBorrowMonth | BorrowsThisMonth" << endl;
-    for (auto &u : users)
-    {
-        string membershipType = "Essential";
-        if (u->membership)
-            membershipType = u->membership->getLevelName();
-
-        userFile << u->getID() << " | "
-                 << u->getFullName() << " | "
-                 << u->getEmail() << " | "
-                 << u->getPassword() << " | "
-                 << u->getAccountBalance() << " | "
-                 << membershipType << " | "
-                 << u->getLoyaltyPoints() << " | "
-                 << u->getLastBorrowDate() << " | "
-                 << u->getBorrowsToday() << " | "
-                 << u->getLastBorrowMonth() << " | "
-                 << u->getBorrowsThisMonth() << endl;
-    }
-    userFile.close();
-
-    // Save Resources
-    ofstream resFile("resources.txt");
-    if (!resFile.is_open())
-    {
-        cout << "Error: Cannot open resources.txt" << endl;
-        return;
-    }
-    resFile << "ID | Type | Title | Author | Category | Available | Rating | BorrowCount" << endl;
-    for (auto &r : resources)
-    {
-        string typeName = "Unknown";
-        if (dynamic_cast<PrimePickBook *>(r))
-            typeName = "PrimePick";
-        else if (dynamic_cast<ClassicShelfBook *>(r))
-            typeName = "ClassicShelf";
-        else if (dynamic_cast<BudgetPickBook *>(r))
-            typeName = "BudgetPick";
-
-        resFile << r->getResourceID() << " | "
-                << typeName << " | "
-                << r->getTitle() << " | "
-                << r->getAuthor() << " | "
-                << r->getCategory() << " | "
-                << (r->getAvailability() ? "1" : "0") << " | "
-                << r->getRating() << " | "
-                << r->getBorrowCount() << endl;
-    }
-    resFile.close();
-
-    // Save Admins
-    ofstream adminFile("admins.txt");
-    if (!adminFile.is_open())
-    {
-        cout << "Error: Cannot open admins.txt" << endl;
-        return;
-    }
-    adminFile << "ID | Name | Email | Password | AccessLevel" << endl;
-    for (auto &a : admins)
-    {
-        adminFile << a->getID() << " | "
-                  << a->getFullName() << " | "
-                  << a->getEmail() << " | "
-                  << a->getPassword() << " | "
-                  << a->getAccessLevel() << endl;
-    }
-    adminFile.close();
-
-    // Save Borrow History
-    ofstream histFile("borrow_history.txt");
-    if (!histFile.is_open())
-    {
-        cout << "Error: Cannot open borrow_history.txt" << endl;
-        return;
-    }
-    histFile << "UserID | ResourceID | ResourceName | BorrowDate | DueDate | Returned | ReturnDate" << endl;
-    for (auto &u : users)
-    {
-        for (const auto &record : u->getBorrowHistory())
-        {
-            histFile << u->getID() << " | "
-                     << record.getResourceID() << " | "
-                     << record.getResourceName() << " | "
-                     << record.getBorrowDate() << " | "
-                     << record.getDueDate() << " | "
-                     << (record.getReturnStatus() ? "1" : "0") << " | "
-                     << record.getReturnDate() << endl;
+    try {
+        // Save Users
+        ofstream userFile("users.txt");
+        if (!userFile.is_open()) {
+            throw LibraryException("Cannot save user data: File write failed (users.txt)");
         }
-    }
-    histFile.close();
+        userFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        userFile << "ID | Name | Email | Password | Balance | Membership | LoyaltyPoints | LastBorrowDate | BorrowsToday | LastBorrowMonth | BorrowsThisMonth" << endl;
+        for (auto &u : users) {
+            string membershipType = "Essential";
+            if (u && u->membership)
+                membershipType = u->membership->getLevelName();
 
-    // Save Reviews
-    ofstream reviewFile("reviews.txt");
-    if (!reviewFile.is_open())
-    {
-        cout << "Error: Cannot open reviews.txt" << endl;
-        return;
-    }
-    reviewFile << "ResourceID | UserID | Rating | ReviewText" << endl;
-    for (auto &r : resources)
-    {
-        for (const auto &review : r->getReviews())
-        {
-            if (review && review->getUser())
-            {
-                // Replace newlines and pipes with spaces to avoid parsing issues
-                string reviewText = review->getReviewText();
-                for (char &c : reviewText)
-                {
-                    if (c == '\n' || c == '|') c = ' ';
-                }
-                reviewFile << r->getResourceID() << " | "
-                           << review->getUser()->getID() << " | "
-                           << review->getRatingValue() << " | "
-                           << reviewText << endl;
+            userFile << u->getID() << " | "
+                     << u->getFullName() << " | "
+                     << u->getEmail() << " | "
+                     << u->getPassword() << " | "
+                     << u->getAccountBalance() << " | "
+                     << membershipType << " | "
+                     << u->getLoyaltyPoints() << " | "
+                     << u->getLastBorrowDate() << " | "
+                     << u->getBorrowsToday() << " | "
+                     << u->getLastBorrowMonth() << " | "
+                     << u->getBorrowsThisMonth() << endl;
+        }
+        userFile.close();
+
+        // Save Resources
+        ofstream resFile("resources.txt");
+        if (!resFile.is_open()) {
+            throw LibraryException("Cannot save resource data: File write failed (resources.txt)");
+        }
+        resFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        resFile << "ID | Type | Title | Author | Category | Available | Rating | BorrowCount" << endl;
+        for (auto &r : resources) {
+            string typeName = "Unknown";
+            if (dynamic_cast<PrimePickBook *>(r))
+                typeName = "PrimePick";
+            else if (dynamic_cast<ClassicShelfBook *>(r))
+                typeName = "ClassicShelf";
+            else if (dynamic_cast<BudgetPickBook *>(r))
+                typeName = "BudgetPick";
+
+            resFile << r->getResourceID() << " | "
+                    << typeName << " | "
+                    << r->getTitle() << " | "
+                    << r->getAuthor() << " | "
+                    << r->getCategory() << " | "
+                    << (r->getAvailability() ? "1" : "0") << " | "
+                    << r->getRating() << " | "
+                    << r->getBorrowCount() << endl;
+        }
+        resFile.close();
+
+        // Save Admins
+        ofstream adminFile("admins.txt");
+        if (!adminFile.is_open()) {
+            throw LibraryException("Cannot save admin data: File write failed (admins.txt)");
+        }
+        adminFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        adminFile << "ID | Name | Email | Password | AccessLevel" << endl;
+        for (auto &a : admins) {
+            adminFile << a->getID() << " | "
+                      << a->getFullName() << " | "
+                      << a->getEmail() << " | "
+                      << a->getPassword() << " | "
+                      << a->getAccessLevel() << endl;
+        }
+        adminFile.close();
+
+        // Save Borrow History
+        ofstream histFile("borrow_history.txt");
+        if (!histFile.is_open()) {
+            throw LibraryException("Cannot save borrow history: File write failed (borrow_history.txt)");
+        }
+        histFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        histFile << "UserID | ResourceID | ResourceName | BorrowDate | DueDate | Returned | ReturnDate" << endl;
+        for (auto &u : users) {
+            for (const auto &record : u->getBorrowHistory()) {
+                histFile << u->getID() << " | "
+                         << record.getResourceID() << " | "
+                         << record.getResourceName() << " | "
+                         << record.getBorrowDate() << " | "
+                         << record.getDueDate() << " | "
+                         << (record.getReturnStatus() ? "1" : "0") << " | "
+                         << record.getReturnDate() << endl;
             }
         }
-    }
-    reviewFile.close();
+        histFile.close();
 
-    // Save Reservations
-    ofstream reservationFile("reservations.txt");
-    if (!reservationFile.is_open())
-    {
-        cout << "Error: Cannot open reservations.txt" << endl;
-        return;
+        // Save Reviews
+        ofstream reviewFile("reviews.txt");
+        if (!reviewFile.is_open()) {
+            throw LibraryException("Cannot save reviews: File write failed (reviews.txt)");
+        }
+        reviewFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        reviewFile << "ResourceID | UserID | Rating | ReviewText" << endl;
+        for (auto &r : resources) {
+            for (const auto &review : r->getReviews()) {
+                if (review && review->getUser()) {
+                    string reviewText = review->getReviewText();
+                    for (char &c : reviewText) {
+                        if (c == '\n' || c == '|') c = ' ';
+                    }
+                    reviewFile << r->getResourceID() << " | "
+                               << review->getUser()->getID() << " | "
+                               << review->getRatingValue() << " | "
+                               << reviewText << endl;
+                }
+            }
+        }
+        reviewFile.close();
+
+        // Save Reservations
+        ofstream reservationFile("reservations.txt");
+        if (!reservationFile.is_open()) {
+            throw LibraryException("Cannot save reservations: File write failed (reservations.txt)");
+        }
+        reservationFile.exceptions(ios_base::badbit | ios_base::failbit);
+        
+        reservationFile << "UserID | ResourceID | ResourceName | ReservationDate | QueuePosition | Status" << endl;
+        for (auto &reservation : reservations) {
+            reservationFile << reservation->getUserID() << " | "
+                           << reservation->getResourceID() << " | "
+                           << reservation->getResourceName() << " | "
+                           << reservation->getReservationDate() << " | "
+                           << reservation->getQueuePosition() << " | "
+                           << reservation->getStatus() << endl;
+        }
+        reservationFile.close();
+        
+    } catch (const ios_base::failure& e) {
+        cerr << "[CRITICAL] File I/O error during save: " << e.what() << endl;
+        throw LibraryException("Cannot save system data: " + string(e.what()));
+    } catch (const LibraryException& e) {
+        cerr << "[CRITICAL] " << e.getMessage() << endl;
+        throw;
+    } catch (const exception& e) {
+        cerr << "[CRITICAL] Unexpected error during save: " << e.what() << endl;
+        throw LibraryException("Unexpected error while saving data: " + string(e.what()));
     }
-    reservationFile << "UserID | ResourceID | ResourceName | ReservationDate | QueuePosition | Status" << endl;
-    for (auto &reservation : reservations)
-    {
-        reservationFile << reservation->getUserID() << " | "
-                       << reservation->getResourceID() << " | "
-                       << reservation->getResourceName() << " | "
-                       << reservation->getReservationDate() << " | "
-                       << reservation->getQueuePosition() << " | "
-                       << reservation->getStatus() << endl;
-    }
-    reservationFile.close();
 }
 
 // Load data 
@@ -489,7 +490,9 @@ void LibrarySystem::loadData() {
     } else {
         string line;
         bool isFirstLine = true;
+        int lineNum = 0;
         while (getline(userFile, line)) {
+            lineNum++;
             if (isFirstLine && line.find("ID |") == 0) {
                 isFirstLine = false;
                 continue;
@@ -507,46 +510,85 @@ void LibrarySystem::loadData() {
                 }
                 parts.push_back(token);
             }
-            if (parts.size() < 7) continue;
+            if (parts.size() < 7) {
+                cerr << "[WARNING] Invalid user record at line " << lineNum << ": not enough fields" << endl;
+                continue;
+            }
 
-            int id;
-            double balance;
-            string name    = parts[1];
-            string email   = parts[2];
-            string pass    = parts[3];
-            string membershipType = parts[5];
-            int loyaltyPoints = stoi(parts[6]);
-            
-            // Parse ID and Balance from the file
-            id = stoi(parts[0]);
-            balance = stod(parts[4]);
-            
-            // Load borrowing limits if available (new fields)
-            string lastBorrowDate = (parts.size() > 7) ? parts[7] : "";
-            int borrowsToday = (parts.size() > 8) ? stoi(parts[8]) : 0;
-            string lastBorrowMonth = (parts.size() > 9) ? parts[9] : "";
-            int borrowsThisMonth = (parts.size() > 10) ? stoi(parts[10]) : 0;
+            try {
+                int id;
+                double balance;
+                string name    = parts[1];
+                string email   = parts[2];
+                string pass    = parts[3];
+                string membershipType = parts[5];
+                int loyaltyPoints;
+                
+                // Parse with exception handling
+                id = stoi(parts[0]);
+                balance = stod(parts[4]);
+                loyaltyPoints = stoi(parts[6]);
+                
+                if (id <= 0 || balance < 0 || loyaltyPoints < 0) {
+                    cerr << "[WARNING] Invalid values in user record at line " << lineNum << ": negative or zero ID/balance/points" << endl;
+                    continue;
+                }
+                
+                // Load borrowing limits if available (new fields)
+                string lastBorrowDate = (parts.size() > 7) ? parts[7] : "";
+                int borrowsToday = 0;
+                int borrowsThisMonth = 0;
+                
+                if (parts.size() > 8) {
+                    try {
+                        borrowsToday = stoi(parts[8]);
+                    } catch (...) {
+                        cerr << "[WARNING] Invalid borrowsToday value at line " << lineNum << endl;
+                        borrowsToday = 0;
+                    }
+                }
+                
+                string lastBorrowMonth = (parts.size() > 9) ? parts[9] : "";
+                
+                if (parts.size() > 10) {
+                    try {
+                        borrowsThisMonth = stoi(parts[10]);
+                    } catch (...) {
+                        cerr << "[WARNING] Invalid borrowsThisMonth value at line " << lineNum << endl;
+                        borrowsThisMonth = 0;
+                    }
+                }
 
-            string firstName = name, lastName = "";
-            size_t sp = name.find(' ');
-            if (sp != string::npos) { firstName = name.substr(0, sp); lastName = name.substr(sp + 1); }
+                string firstName = name, lastName = "";
+                size_t sp = name.find(' ');
+                if (sp != string::npos) { firstName = name.substr(0, sp); lastName = name.substr(sp + 1); }
 
-            User *user = new User(id, firstName, lastName, email, pass, balance);
-            if (membershipType == "Deluxe")
-                user->setMembership(new DeluxeMembership());
-            else if (membershipType == "Extra")
-                user->setMembership(new ExtraMembership());
-            else
-                user->setMembership(new NormalMembership());
-            for (int i = 0; i < loyaltyPoints; ++i) user->earnpoints(1);
-            
-            // Restore borrowing limits
-            user->lastBorrowDate = lastBorrowDate;
-            user->borrowsToday = borrowsToday;
-            user->lastBorrowMonth = lastBorrowMonth;
-            user->borrowsThisMonth = borrowsThisMonth;
-            
-            users.push_back(user);
+                User *user = new User(id, firstName, lastName, email, pass, balance);
+                if (membershipType == "Deluxe")
+                    user->setMembership(new DeluxeMembership());
+                else if (membershipType == "Extra")
+                    user->setMembership(new ExtraMembership());
+                else
+                    user->setMembership(new NormalMembership());
+                for (int i = 0; i < loyaltyPoints; ++i) user->earnpoints(1);
+                
+                // Restore borrowing limits
+                user->lastBorrowDate = lastBorrowDate;
+                user->borrowsToday = borrowsToday;
+                user->lastBorrowMonth = lastBorrowMonth;
+                user->borrowsThisMonth = borrowsThisMonth;
+                
+                users.push_back(user);
+            } catch (const invalid_argument& e) {
+                cerr << "[WARNING] Invalid argument in user record at line " << lineNum << ": " << e.what() << endl;
+                continue;
+            } catch (const out_of_range& e) {
+                cerr << "[WARNING] Number out of range in user record at line " << lineNum << ": " << e.what() << endl;
+                continue;
+            } catch (const exception& e) {
+                cerr << "[WARNING] Error parsing user record at line " << lineNum << ": " << e.what() << endl;
+                continue;
+            }
         }
     }
     userFile.close();
@@ -562,8 +604,10 @@ void LibrarySystem::loadData() {
     {
         string line;
         bool isFirstLine = true;
+        int lineNum = 0;
         while (getline(resFile, line))
         {
+            lineNum++;
             if (isFirstLine && line.find("ID |") == 0) {
                 isFirstLine = false;
                 continue;
@@ -580,33 +624,66 @@ void LibrarySystem::loadData() {
                 }
                 parts.push_back(token);
             }
-            if (parts.size() < 8) continue;
-
-            int id;
-            double rating;
-            int borrowCount;
-            string type = parts[1];
-            string title = parts[2];
-            string author = parts[3];
-            string category = parts[4];
-            bool available = parts[5] == "1";
-            if (!parseInt(parts[0], id) || !parseDouble(parts[6], rating) || !parseInt(parts[7], borrowCount))
+            if (parts.size() < 8) {
+                cerr << "[WARNING] Invalid resource record at line " << lineNum << ": not enough fields" << endl;
                 continue;
+            }
 
-            Resource *res = nullptr;
-            if (type == "PrimePick")
-                res = new PrimePickBook(id, title, author, category);
-            else if (type == "ClassicShelf")
-                res = new ClassicShelfBook(id, title, author, category);
-            else if (type == "BudgetPick")
-                res = new BudgetPickBook(id, title, author, category);
-            else
+            try {
+                int id;
+                double rating;
+                int borrowCount;
+                string type = parts[1];
+                string title = parts[2];
+                string author = parts[3];
+                string category = parts[4];
+                bool available = parts[5] == "1";
+                
+                if (!parseInt(parts[0], id)) {
+                    cerr << "[WARNING] Invalid resource ID at line " << lineNum << endl;
+                    continue;
+                }
+                
+                if (!parseDouble(parts[6], rating)) {
+                    cerr << "[WARNING] Invalid resource rating at line " << lineNum << endl;
+                    continue;
+                }
+                
+                if (!parseInt(parts[7], borrowCount)) {
+                    cerr << "[WARNING] Invalid resource borrow count at line " << lineNum << endl;
+                    continue;
+                }
+                
+                if (id <= 0 || rating < 0 || borrowCount < 0) {
+                    cerr << "[WARNING] Invalid values in resource record at line " << lineNum << endl;
+                    continue;
+                }
+
+                Resource *res = nullptr;
+                if (type == "PrimePick")
+                    res = new PrimePickBook(id, title, author, category);
+                else if (type == "ClassicShelf")
+                    res = new ClassicShelfBook(id, title, author, category);
+                else if (type == "BudgetPick")
+                    res = new BudgetPickBook(id, title, author, category);
+                else {
+                    cerr << "[WARNING] Unknown resource type '" << type << "' at line " << lineNum << endl;
+                    continue;
+                }
+
+                if (!res) {
+                    cerr << "[WARNING] Failed to create resource at line " << lineNum << endl;
+                    continue;
+                }
+
+                res->isAvailable = available;
+                res->rating = rating;
+                res->borrowCount = borrowCount;
+                resources.push_back(res);
+            } catch (const exception& e) {
+                cerr << "[WARNING] Error parsing resource record at line " << lineNum << ": " << e.what() << endl;
                 continue;
-
-            res->isAvailable = available;
-            res->rating = rating;
-            res->borrowCount = borrowCount;
-            resources.push_back(res);
+            }
         }
         resFile.close();
         cout << "Resource data loaded from resources.txt" << endl;
@@ -1086,75 +1163,127 @@ void LibrarySystem::fulfillNextReservation(int resourceID, string date)
 
 bool LibrarySystem::collectReservedBook(int resourceID, string date)
 {
-    if (!currentUser)
-    {
-        throw LibraryException("Cannot collect: No user is currently logged in.");
-    }
-
-    Resource* res = getResourceByID(resourceID);
-    if (!res)
-    {
-        throw LibraryException("Cannot collect: Resource not found.");
-    }
-
-    // Find the fulfilled reservation
-    Reservation* collectedRes = nullptr;
-    for (auto& reservation : reservations) {
-        if (reservation->getUserID() == currentUser->getID() && 
-            reservation->getResourceID() == resourceID &&
-            reservation->getStatus() == "fulfilled") {
-            collectedRes = reservation;
-            break;
+    try {
+        // Validate user is logged in
+        if (!currentUser)
+        {
+            throw LibraryException("Cannot collect: No user is currently logged in.");
         }
+
+        // Validate resource exists
+        Resource* res = getResourceByID(resourceID);
+        if (!res)
+        {
+            throw LibraryException("Cannot collect: Resource not found.");
+        }
+
+        // Find the fulfilled reservation
+        Reservation* collectedRes = nullptr;
+        for (auto& reservation : reservations) {
+            if (!reservation) {
+                cerr << "[WARNING] Null reservation found in collection loop" << endl;
+                continue;
+            }
+            
+            if (reservation->getUserID() == currentUser->getID() && 
+                reservation->getResourceID() == resourceID &&
+                reservation->getStatus() == "fulfilled") {
+                collectedRes = reservation;
+                break;
+            }
+        }
+
+        if (!collectedRes)
+        {
+            throw LibraryException("Cannot collect: No fulfilled reservation found for this book.");
+        }
+
+        // SECURITY CHECK: Verify user hasn't hit daily borrow limit
+        // Use borrowsToday counter (never decrements on return, only resets per calendar day)
+        int borrowsToday = currentUser->getBorrowsToday();
+        
+        // If it's a different day, counter resets to 0
+        if (currentUser->getLastBorrowDate() != date) {
+            borrowsToday = 0;  // Different day, counter resets
+        }
+
+        if (borrowsToday >= 2) {
+            throw LibraryException("Cannot collect: You have reached daily borrow limit (2 books per day TOTAL). The limit resets at midnight.");
+        }
+
+        // Validate current user pointer
+        if (!currentUser) {
+            throw LibraryException("ERROR: Current user became null during collection process");
+        }
+
+        // Calculate due date (7 days from today)
+        time_t now = time(nullptr);
+        if (now < 0) {
+            throw LibraryException("ERROR: System time is invalid");
+        }
+        
+        time_t dueTime = now + (7 * 24 * 60 * 60);
+        struct tm* dueinfo = localtime(&dueTime);
+        if (!dueinfo) {
+            throw LibraryException("ERROR: Failed to calculate due date");
+        }
+        
+        char dueBuffer[20];
+        strftime(dueBuffer, sizeof(dueBuffer), "%Y-%m-%d", dueinfo);
+        string dueDate(dueBuffer);
+
+        // Validate res pointer before accessing
+        if (!res) {
+            throw LibraryException("ERROR: Resource pointer became null");
+        }
+
+        // Create borrow record (bypass availability check since reservation was fulfilled)
+        try {
+            BorrowRecord record(currentUser, resourceID, res->getTitle(), date, dueDate);
+            currentUser->borrowHistory.push_back(record);
+        } catch (const exception& e) {
+            throw LibraryException("Cannot create borrow record: " + string(e.what()));
+        }
+        
+        // INCREMENT borrowsToday counter (same as borrowresources())
+        if (date == currentUser->getLastBorrowDate()) {
+            // Same day, increment counter
+            currentUser->incrementBorrowsToday();
+        } else {
+            // New day, reset counter and set date
+            currentUser->setLastBorrowDate(date);
+            currentUser->setBorrowsToday(1);  // First borrow of the new day
+        }
+        
+        // Validate before accessing resource
+        if (!res) {
+            throw LibraryException("ERROR: Resource pointer invalid");
+        }
+        
+        // Mark resource as unavailable
+        res->updateAvailability(false);
+        
+        // Validate before adding to borrowed resources
+        if (!currentUser) {
+            throw LibraryException("ERROR: Current user pointer invalid");
+        }
+        
+        currentUser->borrowedResources.push_back(res);
+
+        // Mark reservation as collected
+        if (!collectedRes) {
+            throw LibraryException("ERROR: Collected reservation pointer became null");
+        }
+        
+        collectedRes->setStatus("collected");
+
+        saveData();
+        return true;
+    } catch (const LibraryException& e) {
+        cerr << "[ERROR] collectReservedBook: " << e.getMessage() << endl;
+        throw;
+    } catch (const exception& e) {
+        cerr << "[ERROR] Unexpected error in collectReservedBook: " << e.what() << endl;
+        throw LibraryException("Unexpected error while collecting reserved book: " + string(e.what()));
     }
-
-    if (!collectedRes)
-    {
-        throw LibraryException("Cannot collect: No fulfilled reservation found for this book.");
-    }
-
-    // SECURITY CHECK: Verify user hasn't hit daily borrow limit
-    // Use borrowsToday counter (never decrements on return, only resets per calendar day)
-    int borrowsToday = currentUser->getBorrowsToday();
-    
-    // If it's a different day, counter resets to 0
-    if (currentUser->getLastBorrowDate() != date) {
-        borrowsToday = 0;  // Different day, counter resets
-    }
-
-    if (borrowsToday >= 2) {
-        throw LibraryException("Cannot collect: You have reached daily borrow limit (2 books per day TOTAL). The limit resets at midnight.");
-    }
-
-    // Calculate due date (14 days from today)
-    time_t now = time(nullptr);
-    time_t dueTime = now + (14 * 24 * 60 * 60);
-    struct tm* dueinfo = localtime(&dueTime);
-    char dueBuffer[20];
-    strftime(dueBuffer, sizeof(dueBuffer), "%Y-%m-%d", dueinfo);
-    string dueDate(dueBuffer);
-
-    // Create borrow record (bypass availability check since reservation was fulfilled)
-    BorrowRecord record(currentUser, resourceID, res->getTitle(), date, dueDate);
-    currentUser->borrowHistory.push_back(record);
-    
-    // INCREMENT borrowsToday counter (same as borrowresources())
-    if (date == currentUser->getLastBorrowDate()) {
-        // Same day, increment counter
-        currentUser->incrementBorrowsToday();
-    } else {
-        // New day, reset counter and set date
-        currentUser->setLastBorrowDate(date);
-        currentUser->setBorrowsToday(1);  // First borrow of the new day
-    }
-    
-    // Mark resource as unavailable
-    res->updateAvailability(false);
-    currentUser->borrowedResources.push_back(res);
-
-    // Mark reservation as collected
-    collectedRes->setStatus("collected");
-
-    saveData();
-    return true;
 }
