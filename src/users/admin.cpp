@@ -7,6 +7,7 @@
 #include "../Membership/ExtraMembership.h"
 #include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
+#include "../exceptions/LibraryException.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -20,33 +21,32 @@ Admin::Admin(int id, string firstName, string lastName, string email, string pas
 // ADD RESOURCE
 void Admin::addResources(Resource *r, LibrarySystem& system) {
     if (r == nullptr) {
-        cout << " Invalid Resource. " << endl;
-        return;
+        throw LibraryException("Cannot add resource: Invalid resource provided.");
     }
 
     system.resources.push_back(r);
 }
 // REMOVE RESOURCE
-bool Admin::removeResources(int resourceID, LibrarySystem& system) {
+void Admin::removeResources(int resourceID, LibrarySystem& system) {
     for (auto it = system.resources.begin(); it != system.resources.end(); ++it) {
         if ((*it)->getResourceID() == resourceID) {
             delete *it; 
             system.resources.erase(it);
-            return true;
+            return;
         }
     }
-    return false;
+    throw LibraryException("Cannot remove resource: Resource with ID " + to_string(resourceID) + " not found.");
 }
 
 // UPDATE RESOURCE 
-bool Admin::updateResources(int resourceID, LibrarySystem& system) {
+void Admin::updateResources(int resourceID, LibrarySystem& system) {
     for (auto& r : system.resources) {
         if (r->getResourceID() == resourceID) {
             r->updateAvailability(true);
-            return true;
+            return;
         }
     }
-    return false;
+    throw LibraryException("Cannot update resource: Resource with ID " + to_string(resourceID) + " not found.");
 }
 
 // LOCK USER 
@@ -61,6 +61,7 @@ void Admin::lockUser(int userID, LibrarySystem& system) {
             return;
         }
     }
+    throw LibraryException("Cannot lock/unlock user: User with ID " + to_string(userID) + " not found.");
 }
 
 // CUSTOMER REPORT

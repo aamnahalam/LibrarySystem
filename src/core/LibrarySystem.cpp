@@ -10,11 +10,19 @@
 #include "../Membership/ExtraMembership.h"
 #include "../Membership/DeluxeMembership.h"
 #include "../transactions/BorrowRecord.h"
+#include "../transactions/Reservation.h"
 #include "../services/Review.h"
+#include "../exceptions/LibraryException.h"
+#include "../exceptions/BorrowLimitExceededException.h"
+#include "../exceptions/InsufficientBalanceException.h"
+#include "../exceptions/ResourceNotAvailableException.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <ctime>
 #include <sstream>
+#include <iomanip>
+#include <climits>
 using namespace std;
 
 static bool parseInt(const string &value, int &out)
@@ -81,6 +89,34 @@ void LibrarySystem::addAdmin(Admin *a)
 
 void LibrarySystem::registerUser(string firstName, string lastName, string email, string password, double initialBalance)
 {
+    // Validate inputs
+    if (firstName.empty() || lastName.empty() || email.empty() || password.empty())
+    {
+        throw LibraryException("Cannot register: All fields (name, email, password) are required.");
+    }
+    
+    if (password.length() < 6)
+    {
+        throw LibraryException("Cannot register: Password must be at least 6 characters long.");
+    }
+    
+    if (initialBalance < 0)
+    {
+        throw InsufficientBalanceException("Cannot register: Initial balance cannot be negative.");
+    }
+    
+    // Check if email already exists
+    for (auto &admin : admins) {
+        if (admin->getEmail() == email) {
+            throw LibraryException("Cannot register: Email already registered as an admin account.");
+        }
+    }
+    for (auto &user : users) {
+        if (user->getEmail() == email) {
+            throw LibraryException("Cannot register: Email already registered as a user account.");
+        }
+    }
+    
     // Find the next available ID
     int nextId = 1;
     for (auto &u : users) {
@@ -105,25 +141,33 @@ void LibrarySystem::registerUser(string firstName, string lastName, string email
 // Register new admin (only SuperAdmins can do this)
 bool LibrarySystem::registerAdmin(string firstName, string lastName, string email, string password, string level)
 {
+    // Validate inputs
+    if (firstName.empty() || lastName.empty() || email.empty() || password.empty())
+    {
+        throw LibraryException("Cannot register admin: All fields (name, email, password) are required.");
+    }
+    
+    if (password.length() < 6)
+    {
+        throw LibraryException("Cannot register admin: Password must be at least 6 characters long.");
+    }
+    
     // Note: currentAdmin is only set during login and won't be available if called from admin.cpp
     // Better to check the admin object directly in Admin::createAdmin()
     // For now, we'll just validate the level and proceed
     if (level != "SuperAdmin" && level != "Admin") {
-        cout << "Error: Invalid access level. Must be 'SuperAdmin' or 'Admin'." << endl;
-        return false;
+        throw LibraryException("Error: Invalid access level. Must be 'SuperAdmin' or 'Admin'.");
     }
 
     // Check if email already exists
     for (auto &admin : admins) {
         if (admin->getEmail() == email) {
-            cout << "Error: Admin with this email already exists." << endl;
-            return false;
+            throw LibraryException("Cannot register admin: Email already registered as an admin account.");
         }
     }
     for (auto &user : users) {
         if (user->getEmail() == email) {
-            cout << "Error: User with this email already exists." << endl;
-            return false;
+            throw LibraryException("Cannot register admin: Email already registered as a user account.");
         }
     }
 
@@ -151,6 +195,11 @@ bool LibrarySystem::registerAdmin(string firstName, string lastName, string emai
 // Authenticate user or admin
 bool LibrarySystem::authenticate(string email, string password)
 {
+    if (email.empty() || password.empty())
+    {
+        throw LibraryException("Cannot authenticate: Email and password are required.");
+    }
+    
     // Try to authenticate as user
     for (auto &user : users)
     {
@@ -173,7 +222,7 @@ bool LibrarySystem::authenticate(string email, string password)
         }
     }
     
-    return false;
+    throw LibraryException("Cannot authenticate: Invalid email or password. Please try again or register a new account.");
 }
 
 User *LibrarySystem::getCurrentUser() const
@@ -200,33 +249,28 @@ bool LibrarySystem::borrowResource(int resourceID, string date)
 {
     if (!currentUser)
     {
-        cout << "Cannot borrow: no user signed in." << endl;
-        return false;
+        throw LibraryException("Cannot borrow: No user is currently logged in.");
     }
     Resource *res = getResourceByID(resourceID);
     if (!res)
     {
-        cout << "Cannot borrow: resource not found." << endl;
-        return false;
+        throw LibraryException("Cannot borrow: Resource with ID " + to_string(resourceID) + " not found.");
     }
-    bool success = currentUser->borrowresources(res, date);
-    if (success)
-        saveData();
-    return success;
+    currentUser->borrowresources(res, date);
+    saveData();
+    return true;
 }
 
 double LibrarySystem::returnResource(int resourceID, string date)
 {
     if (!currentUser)
     {
-        cout << "Cannot return: no user signed in." << endl;
-        return 0.0;
+        throw LibraryException("Cannot return: No user is currently logged in.");
     }
     Resource *res = getResourceByID(resourceID);
     if (!res)
     {
-        cout << "Cannot return: resource not found." << endl;
-        return 0.0;
+        throw LibraryException("Cannot return: Resource with ID " + to_string(resourceID) + " not found.");
     }
     double result = currentUser->returnresources(res, date);
     if (result >= 0.0)
@@ -240,14 +284,12 @@ bool LibrarySystem::changeUserMembershipTier(int userID, int tier, bool confirm)
     {
         if (user->getID() == userID)
         {
-            bool changed = user->changeMembershipTier(tier, confirm);
-            if (changed)
-                saveData();
-            return changed;
+            user->changeMembershipTier(tier, confirm);
+            saveData();
+            return true;
         }
     }
-    cout << "User not found with ID " << userID << endl;
-    return false;
+    throw LibraryException("Cannot change membership: User with ID " + to_string(userID) + " not found.");
 }
 
 void LibrarySystem::showAllUsers() const
@@ -410,6 +452,25 @@ void LibrarySystem::saveData()
         }
     }
     reviewFile.close();
+
+    // Save Reservations
+    ofstream reservationFile("reservations.txt");
+    if (!reservationFile.is_open())
+    {
+        cout << "Error: Cannot open reservations.txt" << endl;
+        return;
+    }
+    reservationFile << "UserID | ResourceID | ResourceName | ReservationDate | QueuePosition | Status" << endl;
+    for (auto &reservation : reservations)
+    {
+        reservationFile << reservation->getUserID() << " | "
+                       << reservation->getResourceID() << " | "
+                       << reservation->getResourceName() << " | "
+                       << reservation->getReservationDate() << " | "
+                       << reservation->getQueuePosition() << " | "
+                       << reservation->getStatus() << endl;
+    }
+    reservationFile.close();
 }
 
 // Load data 
@@ -772,4 +833,328 @@ void LibrarySystem::loadData() {
         reviewFile.close();
         cout << "Reviews loaded from reviews.txt" << endl;
     }
+
+    // Load Reservations
+    ifstream reservationFile("reservations.txt");
+    if (!reservationFile.is_open())
+    {
+        cout << "No saved reservation data found. Starting fresh." << endl;
+    }
+    else
+    {
+        string line;
+        bool isFirstLine = true;
+        while (getline(reservationFile, line))
+        {
+            if (isFirstLine && line.find("UserID |") == 0)
+            {
+                isFirstLine = false;
+                continue;
+            }
+            if (line.empty()) continue;
+            
+            // Parse the line
+            stringstream ss(line);
+            string token;
+            vector<string> parts;
+            while (getline(ss, token, '|'))
+            {
+                size_t start = token.find_first_not_of(" \t");
+                size_t end = token.find_last_not_of(" \t");
+                if (start != string::npos && end != string::npos)
+                {
+                    token = token.substr(start, end - start + 1);
+                }
+                parts.push_back(token);
+            }
+            
+            if (parts.size() < 6) continue;
+            
+            int userID = stoi(parts[0]);
+            int resourceID = stoi(parts[1]);
+            string resourceName = parts[2];
+            string reservationDate = parts[3];
+            int queuePosition = stoi(parts[4]);
+            string status = parts[5];
+            
+            // Find the user
+            User* user = nullptr;
+            for (auto& u : users)
+            {
+                if (u->getID() == userID)
+                {
+                    user = u;
+                    break;
+                }
+            }
+            
+            // Create and add reservation if user exists
+            if (user)
+            {
+                Reservation* reservation = new Reservation(user, resourceID, resourceName, reservationDate, queuePosition);
+                reservation->setStatus(status);
+                reservations.push_back(reservation);
+            }
+        }
+        reservationFile.close();
+        cout << "Reservations loaded from reservations.txt" << endl;
+    }
+}
+
+// RESERVATION SYSTEM METHODS
+
+bool LibrarySystem::reserveBook(int resourceID, string date)
+{
+    if (!currentUser)
+    {
+        throw LibraryException("Cannot reserve: No user is currently logged in.");
+    }
+
+    Resource* res = getResourceByID(resourceID);
+    if (!res)
+    {
+        throw LibraryException("Cannot reserve: Resource with ID " + to_string(resourceID) + " not found.");
+    }
+
+    // Check if book is available - if so, user should borrow instead of reserve
+    if (res->getAvailability())
+    {
+        throw LibraryException("Cannot reserve: This book is currently available. Please use 'Borrow a Book' instead.");
+    }
+
+    // Check if already borrowed by current user
+    for (auto& record : currentUser->getBorrowHistory()) {
+        if (record.getResourceName() == res->getTitle() && !record.getReturnStatus()) {
+            throw LibraryException("Cannot reserve: You have already borrowed this book.");
+        }
+    }
+
+    // Check if user already has a pending reservation for this book
+    for (auto& reservation : reservations) {
+        if (reservation->getUserID() == currentUser->getID() && 
+            reservation->getResourceID() == resourceID &&
+            reservation->getStatus() == "pending") {
+            throw LibraryException("Cannot reserve: You already have a pending reservation for this book.");
+        }
+    }
+
+    // Count existing reservations for this book to determine queue position
+    int queuePosition = 1;
+    for (auto& reservation : reservations) {
+        if (reservation->getResourceID() == resourceID && 
+            reservation->getStatus() == "pending") {
+            queuePosition++;
+        }
+    }
+
+    // Create and add reservation
+    Reservation* newReservation = new Reservation(currentUser, resourceID, res->getTitle(), date, queuePosition);
+    reservations.push_back(newReservation);
+
+    saveData();
+    return true;
+}
+
+bool LibrarySystem::cancelReservation(int resourceID)
+{
+    if (!currentUser)
+    {
+        throw LibraryException("Cannot cancel: No user is currently logged in.");
+    }
+
+    for (int i = 0; i < reservations.size(); i++) {
+        if (reservations[i]->getUserID() == currentUser->getID() && 
+            reservations[i]->getResourceID() == resourceID &&
+            reservations[i]->getStatus() == "pending") {
+            
+            reservations[i]->setStatus("cancelled");
+            
+            // Recalculate queue positions for all remaining pending reservations
+            int newPosition = 1;
+            for (auto& res : reservations) {
+                if (res->getResourceID() == resourceID && res->getStatus() == "pending") {
+                    res->setQueuePosition(newPosition);
+                    newPosition++;
+                }
+            }
+
+            saveData();
+            return true;
+        }
+    }
+
+    throw LibraryException("Cannot cancel: No pending reservation found for this book.");
+}
+
+void LibrarySystem::viewReservationsForResource(int resourceID) const
+{
+    Resource* res = getResourceByID(resourceID);
+    if (!res) {
+        cout << "Resource not found." << endl;
+        return;
+    }
+
+    cout << "\n================== RESERVATIONS FOR: " << res->getTitle() << " ==================\n";
+    cout << left << setw(10) << "Position" 
+         << setw(25) << "User" 
+         << setw(15) << "Reserved Date" 
+         << setw(12) << "Status" << "\n";
+    cout << string(70, '-') << "\n";
+
+    bool hasReservations = false;
+    for (auto& reservation : reservations) {
+        if (reservation->getResourceID() == resourceID && reservation->getStatus() == "pending") {
+            hasReservations = true;
+            cout << left << setw(10) << reservation->getQueuePosition()
+                 << setw(25) << reservation->getUser()->getFullName().substr(0, 24)
+                 << setw(15) << reservation->getReservationDate()
+                 << setw(12) << reservation->getStatus() << "\n";
+        }
+    }
+
+    if (!hasReservations) {
+        cout << "No pending reservations for this book.\n";
+    }
+}
+
+void LibrarySystem::viewAllReservations() const
+{
+    cout << "\n================== ALL RESERVATIONS ==================\n";
+    cout << left << setw(8) << "ID" 
+         << setw(25) << "Book" 
+         << setw(20) << "User"
+         << setw(15) << "Reserved Date"
+         << setw(10) << "Queue" 
+         << setw(12) << "Status" << "\n";
+    cout << string(95, '-') << "\n";
+
+    bool hasReservations = false;
+    for (auto& reservation : reservations) {
+        if (reservation->getStatus() == "pending") {
+            hasReservations = true;
+            cout << left << setw(8) << reservation->getResourceID()
+                 << setw(25) << reservation->getResourceName().substr(0, 24)
+                 << setw(20) << reservation->getUser()->getFullName().substr(0, 19)
+                 << setw(15) << reservation->getReservationDate()
+                 << setw(10) << reservation->getQueuePosition()
+                 << setw(12) << reservation->getStatus() << "\n";
+        }
+    }
+
+    if (!hasReservations) {
+        cout << "No pending reservations in the system.\n";
+    }
+}
+
+void LibrarySystem::fulfillNextReservation(int resourceID, string date)
+{
+    // Find the next pending reservation for this resource
+    Reservation* nextReservation = nullptr;
+    int lowestPosition = INT_MAX;
+
+    for (auto& reservation : reservations) {
+        if (reservation->getResourceID() == resourceID && 
+            reservation->getStatus() == "pending" &&
+            reservation->getQueuePosition() < lowestPosition) {
+            lowestPosition = reservation->getQueuePosition();
+            nextReservation = reservation;
+        }
+    }
+
+    if (nextReservation) {
+        User* reservationUser = nextReservation->getUser();
+        
+        // NOTE: We don't check daily borrow limit here because fulfilling a reservation
+        // just marks it as "ready to collect" - it doesn't actually borrow the book yet.
+        // The actual borrow happens in collectReservedBook() which will check all limits.
+        
+        // Silently fulfill without showing user names
+        nextReservation->setStatus("fulfilled");
+        
+        // Recalculate queue positions for remaining pending reservations
+        int newPosition = 1;
+        for (auto& res : reservations) {
+            if (res->getResourceID() == resourceID && res->getStatus() == "pending") {
+                res->setQueuePosition(newPosition);
+                newPosition++;
+            }
+        }
+        
+        saveData();
+    }
+}
+
+bool LibrarySystem::collectReservedBook(int resourceID, string date)
+{
+    if (!currentUser)
+    {
+        throw LibraryException("Cannot collect: No user is currently logged in.");
+    }
+
+    Resource* res = getResourceByID(resourceID);
+    if (!res)
+    {
+        throw LibraryException("Cannot collect: Resource not found.");
+    }
+
+    // Find the fulfilled reservation
+    Reservation* collectedRes = nullptr;
+    for (auto& reservation : reservations) {
+        if (reservation->getUserID() == currentUser->getID() && 
+            reservation->getResourceID() == resourceID &&
+            reservation->getStatus() == "fulfilled") {
+            collectedRes = reservation;
+            break;
+        }
+    }
+
+    if (!collectedRes)
+    {
+        throw LibraryException("Cannot collect: No fulfilled reservation found for this book.");
+    }
+
+    // SECURITY CHECK: Verify user hasn't hit daily borrow limit
+    // Use borrowsToday counter (never decrements on return, only resets per calendar day)
+    int borrowsToday = currentUser->getBorrowsToday();
+    
+    // If it's a different day, counter resets to 0
+    if (currentUser->getLastBorrowDate() != date) {
+        borrowsToday = 0;  // Different day, counter resets
+    }
+
+    if (borrowsToday >= 2) {
+        throw LibraryException("Cannot collect: You have reached daily borrow limit (2 books per day TOTAL). The limit resets at midnight.");
+    }
+
+    // Calculate due date (14 days from today)
+    time_t now = time(nullptr);
+    time_t dueTime = now + (14 * 24 * 60 * 60);
+    struct tm* dueinfo = localtime(&dueTime);
+    char dueBuffer[20];
+    strftime(dueBuffer, sizeof(dueBuffer), "%Y-%m-%d", dueinfo);
+    string dueDate(dueBuffer);
+
+    // Create borrow record (bypass availability check since reservation was fulfilled)
+    BorrowRecord record(currentUser, resourceID, res->getTitle(), date, dueDate);
+    currentUser->borrowHistory.push_back(record);
+    
+    // INCREMENT borrowsToday counter (same as borrowresources())
+    if (date == currentUser->getLastBorrowDate()) {
+        // Same day, increment counter
+        currentUser->incrementBorrowsToday();
+    } else {
+        // New day, reset counter and set date
+        currentUser->setLastBorrowDate(date);
+        currentUser->setBorrowsToday(1);  // First borrow of the new day
+    }
+    
+    // Mark resource as unavailable
+    res->updateAvailability(false);
+    currentUser->borrowedResources.push_back(res);
+
+    // Mark reservation as collected
+    collectedRes->setStatus("collected");
+
+    saveData();
+    return true;
 }

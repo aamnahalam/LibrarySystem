@@ -9,6 +9,7 @@ class BorrowLimitExceededException : public LibraryException
 {
 public:
     BorrowLimitExceededException(string message) : LibraryException(message) {}
+    virtual ~BorrowLimitExceededException() noexcept = default;
 };
 
 #endif

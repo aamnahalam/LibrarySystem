@@ -9,6 +9,7 @@ class User;
 class Admin;
 class Resource;
 class BorrowRecord;
+class Reservation;
 
 class LibrarySystem
 {
@@ -17,6 +18,7 @@ public:
     vector<Admin *> admins;
     vector<Resource *> resources;
     vector<BorrowRecord *> borrowRecords;
+    vector<Reservation *> reservations;
 
 private:
     User *currentUser;
@@ -46,6 +48,14 @@ public:
     Resource *getResourceByID(int resourceID) const;
     bool borrowResource(int resourceID, string date);
     double returnResource(int resourceID, string date);
+
+    // Reservation operations
+    bool reserveBook(int resourceID, string date);
+    bool cancelReservation(int resourceID);
+    void viewReservationsForResource(int resourceID) const;
+    void viewAllReservations() const;
+    void fulfillNextReservation(int resourceID, string date);
+    bool collectReservedBook(int resourceID, string date);
 
     // Reporting
     void showAllUsers() const;

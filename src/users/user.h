@@ -34,7 +34,7 @@ public:
     
     ~User();
     // Core Logic Methods
-    bool borrowresources(Resource* r, string date);
+    void borrowresources(Resource* r, string date);
     bool getLockStatus() const;
     double returnresources(Resource* r, string date);
     void rechargebalance(double amount);
@@ -60,6 +60,11 @@ public:
     string getLastBorrowMonth() const;
     int getBorrowsThisMonth() const;
     
+    // Setters for borrow counter (used by reservation system)
+    void setLastBorrowDate(string date);
+    void setBorrowsToday(int count);
+    void incrementBorrowsToday();
+    
     // Loyalty Points Redemption
     bool redeemPointsForDiscount(int pointsToRedeem);
     bool redeemPointsForFineFreePass();
@@ -69,9 +74,12 @@ public:
     // Membership Upgrade
     bool checkAndUpgradeMembership();
     void displayMembershipDetails() const;
-    bool changeMembershipTier(int tier, bool confirm = true);
+    void changeMembershipTier(int tier, bool confirm = true);
     string getMembershipChangeNotice(int tier) const;
     void showMembershipOptions() const;
+
+    // Reservation System
+    void viewMyReservations() const;
 
     const vector<BorrowRecord>& getBorrowHistory() const;
 };

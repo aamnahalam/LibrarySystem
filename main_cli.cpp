@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <ctime>
 #include <sstream>
+#include <climits>
 #include "src/core/LibrarySystem.h"
 #include "src/users/user.h"
 #include "src/users/admin.h"
@@ -13,6 +14,11 @@
 #include "src/resources/ClassicShelfBook.h"
 #include "src/resources/BudgetPickBook.h"
 #include "src/services/Review.h"
+#include "src/transactions/Reservation.h"
+#include "src/exceptions/LibraryException.h"
+#include "src/exceptions/BorrowLimitExceededException.h"
+#include "src/exceptions/InsufficientBalanceException.h"
+#include "src/exceptions/ResourceNotAvailableException.h"
 
 using namespace std;
 
@@ -190,13 +196,18 @@ void userLogin() {
     cout << "Password: ";
     getline(cin, password);
     
-    if (globalSystem->authenticate(email, password)) {
-        currentUser = globalSystem->getCurrentUser();
-        cout << "\n[SUCCESS] Login successful!\n";
-        cout << "Welcome " << currentUser->getFullName() << "\n";
+    try {
+        if (globalSystem->authenticate(email, password)) {
+            currentUser = globalSystem->getCurrentUser();
+            cout << "\n[SUCCESS] Login successful!\n";
+            cout << "Welcome " << currentUser->getFullName() << "\n";
+            pause();
+        }
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
         pause();
-    } else {
-        cout << "\n[ERROR] Invalid credentials. Please try again or register.\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] Login failed: " << e.what() << "\n";
         pause();
     }
 }
@@ -239,34 +250,16 @@ void registerUser() {
     }
     cin.ignore(10000, '\n');
     
-    if (password.length() < 6) {
-        cout << "\n[ERROR] Password must be at least 6 characters.\n";
-        pause();
-        return;
-    }
-    
-    for (auto& user : globalSystem->users) {
-        if (user->getEmail() == email) {
-            cout << "\n[ERROR] Email already registered.\n";
-            pause();
-            return;
-        }
-    }
-    
-    for (auto& admin : globalSystem->admins) {
-        if (admin->getEmail() == email) {
-            cout << "\n[ERROR] Email already registered.\n";
-            pause();
-            return;
-        }
-    }
-    
     try {
         globalSystem->registerUser(firstName, lastName, email, password, balance);
         cout << "\nRegistration successful!\n";
         cout << "You can now login with your credentials.\n";
-    } catch (...) {
-        cout << "\n[ERROR] Error during registration.\n";
+    } catch (const InsufficientBalanceException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] Registration failed: " << e.what() << "\n";
     }
     pause();
 }
@@ -282,19 +275,22 @@ void displayUserMenu() {
     cout << "3. View Books in My Favorite Categories\n";
     cout << "4. Borrow a Book\n";
     cout << "5. Return a Book\n";
-    cout << "6. View My Borrowing History\n";
-    cout << "7. View My Profile\n";
-    cout << "8. Update Profile\n";
-    cout << "9. View Membership Details\n";
-    cout << "10. Change Membership Tier\n";
-    cout << "11. View Loyalty Points Summary\n";
-    cout << "12. Redeem Loyalty Points for Discount\n";
-    cout << "13. Redeem Points for Fine Waiver\n";
-    cout << "14. Upgrade Membership with Loyalty Points\n";
-    cout << "15. Recharge Account Balance\n";
-    cout << "16. View Book Reviews\n";
-    cout << "17. Logout\n";
-    cout << "\nSelect option (1-17): ";
+    cout << "6. Reserve a Book\n";
+    cout << "7. View My Reservations\n";
+    cout << "8. View Reservation Queue\n";
+    cout << "9. View My Borrowing History\n";
+    cout << "10. View My Profile\n";
+    cout << "11. Update Profile\n";
+    cout << "12. View Membership Details\n";
+    cout << "13. Change Membership Tier\n";
+    cout << "14. View Loyalty Points Summary\n";
+    cout << "15. Redeem Loyalty Points for Discount\n";
+    cout << "16. Redeem Points for Fine Waiver\n";
+    cout << "17. Upgrade Membership with Loyalty Points\n";
+    cout << "18. Recharge Account Balance\n";
+    cout << "19. View Book Reviews\n";
+    cout << "20. Logout\n";
+    cout << "\nSelect option (1-20): ";
 }
 
 void viewBooks() {
@@ -460,8 +456,8 @@ void borrowBook() {
     clearScreen();
     cout << "---------- BORROW A BOOK ----------\n\n";
     
-    // Display available books
-    cout << "Available Books:\n\n";
+    // Display all books with availability status
+    cout << "All Books:\n\n";
     if (globalSystem->resources.empty()) {
         cout << "No books available.\n";
         pause();
@@ -469,23 +465,23 @@ void borrowBook() {
     }
     
     cout << left << setw(6) << "ID" << setw(25) << "Title" << setw(18) << "Author" 
-         << setw(12) << "Category" << setw(8) << "Rating\n";
-    cout << string(80, '-') << "\n";
+         << setw(12) << "Category" << setw(12) << "Availability" << setw(8) << "Rating\n";
+    cout << string(95, '-') << "\n";
     
     bool hasAvailable = false;
     for (auto& r : globalSystem->resources) {
-        if (r->getAvailability()) {
-            hasAvailable = true;
-            cout << left << setw(6) << r->getResourceID() 
-                 << setw(25) << r->getTitle().substr(0, 24)
-                 << setw(18) << r->getAuthor().substr(0, 17)
-                 << setw(12) << r->getCategory().substr(0, 11)
-                 << setw(8) << fixed << setprecision(1) << r->getRating() << "\n";
-        }
+        hasAvailable = true;
+        string availability = r->getAvailability() ? "Available" : "Unavailable";
+        cout << left << setw(6) << r->getResourceID() 
+             << setw(25) << r->getTitle().substr(0, 24)
+             << setw(18) << r->getAuthor().substr(0, 17)
+             << setw(12) << r->getCategory().substr(0, 11)
+             << setw(12) << availability
+             << setw(8) << fixed << setprecision(1) << r->getRating() << "\n";
     }
     
     if (!hasAvailable) {
-        cout << "No books currently available.\n";
+        cout << "No books in the library.\n";
         pause();
         return;
     }
@@ -520,23 +516,23 @@ void borrowBook() {
         string borrowDate = getCurrentDate();
         string dueDate = getDueDate(borrowDate);
         
-        // Check specific error conditions
-        if (currentUser->getLockStatus()) {
-            cout << "\n[ERROR] Access Denied: Your account is locked.\n";
-        } else if (currentUser->getAccountBalance() < 0) {
-            cout << "\n[ERROR] Access Denied: You have unpaid fines. Please recharge your account.\n";
-        } else if (currentUser->borrowresources(book, borrowDate)) {
-            globalSystem->saveData();
-            cout << "\nBook borrowed successfully!\n";
-            cout << "Title: " << book->getTitle() << "\n";
-            cout << "Author: " << book->getAuthor() << "\n";
-            cout << "Borrow Date: " << borrowDate << "\n";
-            cout << "Due Date: " << dueDate << " (7 days)\n";
-        } else {
-            cout << "\n[ERROR] Could not borrow book. You may have exceeded your borrowing limit.\n";
-        }
+        currentUser->borrowresources(book, borrowDate);
+        globalSystem->saveData();
+        cout << "\nBook borrowed successfully!\n";
+        cout << "Title: " << book->getTitle() << "\n";
+        cout << "Author: " << book->getAuthor() << "\n";
+        cout << "Borrow Date: " << borrowDate << "\n";
+        cout << "Due Date: " << dueDate << " (7 days)\n";
+    } catch (const BorrowLimitExceededException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const InsufficientBalanceException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const ResourceNotAvailableException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
-        cout << "\n[ERROR] Error: " << e.what() << "\n";
+        cout << "\n[ERROR] Borrow failed: " << e.what() << "\n";
     }
     pause();
 }
@@ -618,53 +614,57 @@ void returnBook() {
         
         double fine = currentUser->returnresources(book, returnDate);
         
-        if (fine < 0) {
-            cout << "\n[ERROR] Book not found in your borrowed list or invalid return date.\n";
-        } else {
-            globalSystem->saveData();
-            cout << "\nBook returned successfully!\n";
-            cout << "Title: " << book->getTitle() << "\n";
-            cout << "Return Date: " << returnDate << "\n";
-            
-            if (fine > 0) {
-                cout << "\n[FINE CHARGED] Rs." << fixed << setprecision(2) << fine << "\n";
-                cout << "New Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
-                if (currentUser->getAccountBalance() < 0) {
-                    cout << "WARNING: Your balance is NEGATIVE! You have unpaid fines.\n";
-                } else {
-                    cout << "Balance is sufficient.\n";
-                }
-            } else if (waiverWasActive) {
-                cout << "\n*** FINE WAIVER APPLIED ***\n";
-                cout << "You would have been charged a fine, but your waiver covered it!\n";
-                cout << "Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
+        globalSystem->saveData();
+        cout << "\nBook returned successfully!\n";
+        cout << "Title: " << book->getTitle() << "\n";
+        cout << "Return Date: " << returnDate << "\n";
+        
+        // Check if anyone has reserved this book and try to fulfill the next reservation
+        cout << "\n--- CHECKING RESERVATIONS ---\n";
+        globalSystem->fulfillNextReservation(bookId, returnDate);
+        
+        if (fine > 0) {
+            cout << "\n[FINE CHARGED] Rs." << fixed << setprecision(2) << fine << "\n";
+            cout << "New Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
+            if (currentUser->getAccountBalance() < 0) {
+                cout << "WARNING: Your balance is NEGATIVE! You have unpaid fines.\n";
             } else {
-                cout << "No fines incurred.\n";
-                cout << "[LOYALTY POINTS] +10 points earned for returning on time!\n";
-                cout << "Total Loyalty Points: " << currentUser->getLoyaltyPoints() << "\n";
+                cout << "Balance is sufficient.\n";
             }
-            
-            // Ask if user wants to submit a review
-            cout << "\nWould you like to submit a review and rating? (y/n): ";
-            char choice;
-            cin >> choice;
-            cin.ignore();
-            
-            if (choice == 'y' || choice == 'Y') {
-                submitReview(book);
-            }
-            
-            // Ask if user wants to view reviews for this book
-            cout << "\nWould you like to view all reviews for this book? (y/n): ";
-            cin >> choice;
-            cin.ignore();
-            
-            if (choice == 'y' || choice == 'Y') {
-                book->displayReviews();
-            }
+        } else if (waiverWasActive) {
+            cout << "\n*** FINE WAIVER APPLIED ***\n";
+            cout << "You would have been charged a fine, but your waiver covered it!\n";
+            cout << "Balance: Rs." << fixed << setprecision(2) << currentUser->getAccountBalance() << "\n";
+        } else {
+            cout << "No fines incurred.\n";
+            cout << "[LOYALTY POINTS] +10 points earned for returning on time!\n";
+            cout << "Total Loyalty Points: " << currentUser->getLoyaltyPoints() << "\n";
         }
+        
+        // Ask if user wants to submit a review
+        cout << "\nWould you like to submit a review and rating? (y/n): ";
+        char choice;
+        cin >> choice;
+        cin.ignore();
+        
+        if (choice == 'y' || choice == 'Y') {
+            submitReview(book);
+        }
+        
+        // Ask if user wants to view reviews for this book
+        cout << "\nWould you like to view all reviews for this book? (y/n): ";
+        cin >> choice;
+        cin.ignore();
+        
+        if (choice == 'y' || choice == 'Y') {
+            book->displayReviews();
+        }
+    } catch (const InsufficientBalanceException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
-        cout << "\n[ERROR] Error: " << e.what() << "\n";
+        cout << "\n[ERROR] Return failed: " << e.what() << "\n";
     }
     pause();
 }
@@ -873,12 +873,13 @@ void changeMembershipTier() {
             }
         }
         
-        if (currentUser->changeMembershipTier(tier, true)) {
-            globalSystem->saveData();
-            cout << "\nMembership changed successfully!\n";
-        } else {
-            cout << "\n[ERROR] Could not change membership tier.\n";
-        }
+        currentUser->changeMembershipTier(tier, true);
+        globalSystem->saveData();
+        cout << "\nMembership changed successfully!\n";
+    } catch (const InsufficientBalanceException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
         cout << "\n[ERROR] Error: " << e.what() << "\n";
     }
@@ -973,6 +974,261 @@ void userLogout() {
     pause();
 }
 
+// ==================== BOOK RESERVATION SYSTEM ====================
+
+void reserveBook() {
+    clearScreen();
+    cout << "============================================================\n";
+    cout << "                    RESERVE A BOOK                          \n";
+    cout << "============================================================\n\n";
+    
+    // Display available books
+    cout << "Available Books to Reserve:\n\n";
+    cout << left << setw(6) << "ID" << setw(25) << "Title" << setw(18) << "Author" 
+         << setw(12) << "Status\n";
+    cout << string(65, '-') << "\n";
+    
+    for (auto& r : globalSystem->resources) {
+        cout << left << setw(6) << r->getResourceID() 
+             << setw(25) << r->getTitle().substr(0, 24)
+             << setw(18) << r->getAuthor().substr(0, 17)
+             << setw(12) << (r->getAvailability() ? "Available" : "Borrowed") << "\n";
+    }
+    
+    cout << "\n";
+    int bookId;
+    cout << "Enter Book ID to reserve: ";
+    cin >> bookId;
+    cin.ignore();
+    
+    Resource* book = nullptr;
+    for (auto& r : globalSystem->resources) {
+        if (r->getResourceID() == bookId) {
+            book = r;
+            break;
+        }
+    }
+    
+    if (!book) {
+        cout << "\n[ERROR] Book not found.\n";
+        pause();
+        return;
+    }
+    
+    try {
+        string reservationDate = getCurrentDate();
+        bool success = globalSystem->reserveBook(bookId, reservationDate);
+        
+        if (success) {
+            cout << "\n✓ Book reserved successfully!\n";
+            cout << "Title: " << book->getTitle() << "\n";
+            cout << "Reservation Date: " << reservationDate << "\n";
+            cout << "\nYou will be notified when this book becomes available.\n";
+        }
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] " << e.what() << "\n";
+    }
+    
+    pause();
+}
+
+void viewMyReservations() {
+    clearScreen();
+    cout << "============================================================\n";
+    cout << "                    MY RESERVATIONS                         \n";
+    cout << "============================================================\n\n";
+    
+    if (!currentUser) {
+        cout << "No user logged in.\n";
+        pause();
+        return;
+    }
+    
+    cout << left << setw(8) << "Book ID"
+         << setw(25) << "Title"
+         << setw(15) << "Reserved Date"
+         << setw(12) << "Status\n";
+    cout << string(75, '-') << "\n";
+    
+    bool hasReservations = false;
+    
+    for (auto& reservation : globalSystem->reservations) {
+        if (reservation->getUserID() == currentUser->getID() && 
+            (reservation->getStatus() == "pending" || reservation->getStatus() == "fulfilled")) {
+            hasReservations = true;
+            string statusDisplay = reservation->getStatus();
+            if (reservation->getStatus() == "fulfilled") {
+                statusDisplay = "[READY]";
+            } else if (reservation->getStatus() == "pending") {
+                statusDisplay = "Pos " + to_string(reservation->getQueuePosition());
+            }
+            cout << left << setw(8) << reservation->getResourceID()
+                 << setw(25) << reservation->getResourceName().substr(0, 24)
+                 << setw(15) << reservation->getReservationDate()
+                 << setw(12) << statusDisplay << "\n";
+        }
+    }
+    
+    if (!hasReservations) {
+        cout << "You have no reservations.\n";
+    } else {
+        cout << "\n";
+        cout << "1. Cancel a pending reservation\n";
+        cout << "2. Collect a ready (fulfilled) book\n";
+        cout << "3. Skip\n";
+        cout << "Select option (1-3): ";
+        int option;
+        cin >> option;
+        cin.ignore();
+        
+        if (option == 1) {
+            // Cancel pending reservation
+            int resourceID;
+            cout << "Enter Book ID to cancel reservation (or 0 to skip): ";
+            cin >> resourceID;
+            cin.ignore();
+            
+            if (resourceID != 0) {
+                try {
+                    bool cancelled = globalSystem->cancelReservation(resourceID);
+                    if (cancelled) {
+                        cout << "\n✓ Reservation cancelled successfully!\n";
+                    }
+                } catch (const LibraryException& e) {
+                    cout << "\n[ERROR] " << e.getMessage() << "\n";
+                }
+            }
+        } else if (option == 2) {
+            // Collect ready book
+            int resourceID;
+            cout << "Enter Book ID to collect (must show [READY]): ";
+            cin >> resourceID;
+            cin.ignore();
+            
+            // Find the ready reservation
+            Reservation* readyRes = nullptr;
+            for (auto& reservation : globalSystem->reservations) {
+                if (reservation->getUserID() == currentUser->getID() && 
+                    reservation->getResourceID() == resourceID &&
+                    reservation->getStatus() == "fulfilled") {
+                    readyRes = reservation;
+                    break;
+                }
+            }
+            
+            if (!readyRes) {
+                cout << "\n[ERROR] No ready book found with that ID.\n";
+            } else {
+                Resource* res = globalSystem->getResourceByID(resourceID);
+                
+                // Get today's date
+                time_t now = time(nullptr);
+                struct tm* timeinfo = localtime(&now);
+                char dateBuffer[20];
+                strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d", timeinfo);
+                string todayDate(dateBuffer);
+                
+                try {
+                    // Use collectReservedBook which bypasses availability check
+                    bool collected = globalSystem->collectReservedBook(resourceID, todayDate);
+                    
+                    if (collected) {
+                        cout << "\n[SUCCESS] Book collected: " << res->getTitle() << "\n";
+                        cout << "  Borrow Date: " << todayDate << "\n";
+                        cout << "  You can now return this book using the Return Book option.\n";
+                    }
+                } catch (const LibraryException& e) {
+                    cout << "\n[ERROR] " << e.getMessage() << "\n";
+                } catch (const exception& e) {
+                    cout << "\n[ERROR] " << e.what() << "\n";
+                }
+            }
+        }
+    }
+    
+    pause();
+}
+
+void viewReservationQueue() {
+    clearScreen();
+    cout << "============================================================\n";
+    cout << "                 RESERVATION QUEUE STATUS                   \n";
+    cout << "============================================================\n\n";
+    
+    if (!currentUser) {
+        cout << "No user logged in.\n";
+        pause();
+        return;
+    }
+    
+    int bookId;
+    cout << "Enter Book ID to check your queue position (or 0 to skip): ";
+    cin >> bookId;
+    cin.ignore();
+    
+    if (bookId == 0) {
+        // Show all of user's reservations with positions
+        bool found = false;
+        cout << "\n--- YOUR RESERVATIONS ---\n";
+        cout << left << setw(8) << "Book ID"
+             << setw(25) << "Title"
+             << setw(12) << "Position"
+             << setw(12) << "Status\n";
+        cout << string(65, '-') << "\n";
+        
+        for (auto& reservation : globalSystem->reservations) {
+            if (reservation->getUserID() == currentUser->getID() && 
+                reservation->getStatus() == "pending") {
+                found = true;
+                cout << left << setw(8) << reservation->getResourceID()
+                     << setw(25) << reservation->getResourceName().substr(0, 24)
+                     << setw(12) << ("Pos " + to_string(reservation->getQueuePosition()))
+                     << setw(12) << reservation->getStatus() << "\n";
+            }
+        }
+        
+        if (!found) {
+            cout << "You have no pending reservations.\n";
+        }
+    } else {
+        // Show only THIS user's position for the requested book
+        Resource* res = globalSystem->getResourceByID(bookId);
+        if (!res) {
+            cout << "\n[ERROR] Book not found.\n";
+        } else {
+            bool found = false;
+            for (auto& reservation : globalSystem->reservations) {
+                if (reservation->getResourceID() == bookId && 
+                    reservation->getUserID() == currentUser->getID() &&
+                    reservation->getStatus() == "pending") {
+                    found = true;
+                    cout << "\n================== " << res->getTitle() << " ==================\n";
+                    cout << "Your Position: " << reservation->getQueuePosition() << "\n";
+                    
+                    // Count people ahead
+                    int peopleAhead = 0;
+                    for (auto& r : globalSystem->reservations) {
+                        if (r->getResourceID() == bookId && 
+                            r->getStatus() == "pending" &&
+                            r->getQueuePosition() < reservation->getQueuePosition()) {
+                            peopleAhead++;
+                        }
+                    }
+                    cout << "People ahead of you: " << peopleAhead << "\n";
+                    break;
+                }
+            }
+            
+            if (!found) {
+                cout << "\nYou do not have a reservation for " << res->getTitle() << "\n";
+            }
+        }
+    }
+    
+    pause();
+}
 
 // ==================== ADMIN FEATURES ====================
 
@@ -993,21 +1249,18 @@ void adminLogin() {
     cout << "Password: ";
     getline(cin, password);
     
-    bool found = false;
-    for (auto& admin : globalSystem->admins) {
-        if (admin->getEmail() == email && admin->getPassword() == password) {
-            currentAdmin = admin;
-            found = true;
-            break;
+    try {
+        if (globalSystem->authenticate(email, password)) {
+            currentAdmin = globalSystem->getCurrentAdmin();
+            cout << "\nAdmin login successful!\n";
+            cout << "Welcome " << currentAdmin->getFullName() << " (" << currentAdmin->getAccessLevel() << ")\n";
+            pause();
         }
-    }
-    
-    if (found) {
-        cout << "\nAdmin login successful!\n";
-        cout << "Welcome " << currentAdmin->getFullName() << " (" << currentAdmin->getAccessLevel() << ")\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
         pause();
-    } else {
-        cout << "\n[ERROR] Invalid admin credentials.\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] Admin login failed: " << e.what() << "\n";
         pause();
     }
 }
@@ -1028,8 +1281,9 @@ void displayAdminMenu() {
     cout << "9. Add New Admin\n";
     cout << "10. View Reports\n";
     cout << "11. Update User Membership\n";
-    cout << "12. Logout\n";
-    cout << "\nSelect option (1-12): ";
+    cout << "12. Manage Reservations\n";
+    cout << "13. Logout\n";
+    cout << "\nSelect option (1-13): ";
 }
 
 void addBook() {
@@ -1050,6 +1304,10 @@ void addBook() {
     getline(cin, typeStr);
     
     try {
+        if (title.empty() || author.empty() || category.empty()) {
+            throw LibraryException("Cannot add book: All fields (title, author, category) are required.");
+        }
+        
         int newId = 5001 + bookCount;
         Resource* newBook = nullptr;
         
@@ -1060,9 +1318,7 @@ void addBook() {
         } else if (typeStr == "3") {
             newBook = new BudgetPickBook(newId, title, author, category);
         } else {
-            cout << "\n[ERROR] Invalid book type.\n";
-            pause();
-            return;
+            throw LibraryException("Cannot add book: Invalid book type. Must be 1, 2, or 3.");
         }
         
         globalSystem->resources.push_back(newBook);
@@ -1071,8 +1327,10 @@ void addBook() {
         cout << "\nBook added successfully!\n";
         cout << "ID: " << newId << "\n";
         cout << "Title: " << title << "\n";
-    } catch (...) {
-        cout << "\n[ERROR] Error adding book.\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] Error adding book: " << e.what() << "\n";
     }
     pause();
 }
@@ -1092,14 +1350,13 @@ void removeBook() {
     cin.ignore();
     
     try {
-        if (currentAdmin->removeResources(bookId, *globalSystem)) {
-            globalSystem->saveData();
-            cout << "\nBook removed successfully!\n";
-        } else {
-            cout << "\n[ERROR] Book not found.\n";
-        }
+        currentAdmin->removeResources(bookId, *globalSystem);
+        globalSystem->saveData();
+        cout << "\nBook removed successfully!\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
-        cout << "\n[ERROR] Error: " << e.what() << "\n";
+        cout << "\n[ERROR] Error removing book: " << e.what() << "\n";
     }
     pause();
 }
@@ -1116,12 +1373,11 @@ void updateBook() {
     cin.ignore();
     
     try {
-        if (currentAdmin->updateResources(bookId, *globalSystem)) {
-            globalSystem->saveData();
-            cout << "\nBook marked as available successfully!\n";
-        } else {
-            cout << "\n[ERROR] Book not found.\n";
-        }
+        currentAdmin->updateResources(bookId, *globalSystem);
+        globalSystem->saveData();
+        cout << "\nBook marked as available successfully!\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
         cout << "\n[ERROR] Error: " << e.what() << "\n";
     }
@@ -1205,8 +1461,10 @@ void lockUnlockUser() {
             }
         }
         cout << "\n[ERROR] User not found.\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
     } catch (const exception& e) {
-        cout << "\n[ERROR] Error: " << e.what() << "\n";
+        cout << "\n[ERROR] Error locking/unlocking user: " << e.what() << "\n";
     }
     pause();
 }
@@ -1475,6 +1733,169 @@ void updateUserMembership() {
     pause();
 }
 
+void adminManageReservations() {
+    clearScreen();
+    cout << "============================================================\n";
+    cout << "             ADMIN RESERVATION MANAGEMENT                   \n";
+    cout << "============================================================\n\n";
+    
+    cout << "1. View All System Reservations\n";
+    cout << "2. View Reservations for Specific Book\n";
+    cout << "3. Cancel Reservation (Admin)\n";
+    cout << "4. Fulfill Reservation (with limit check)\n";
+    cout << "5. Back to Admin Menu\n\n";
+    
+    int choice;
+    cout << "Select option (1-5): ";
+    cin >> choice;
+    cin.ignore();
+    
+    if (choice == 1) {
+        // View all system reservations
+        clearScreen();
+        cout << "========== ALL SYSTEM RESERVATIONS ==========\n\n";
+        
+        if (globalSystem->reservations.empty()) {
+            cout << "No reservations in system.\n";
+        } else {
+            cout << left << setw(8) << "User ID"
+                 << setw(20) << "User Name"
+                 << setw(8) << "Book ID"
+                 << setw(25) << "Title"
+                 << setw(10) << "Position"
+                 << setw(12) << "Status\n";
+            cout << string(91, '-') << "\n";
+            
+            for (auto& reservation : globalSystem->reservations) {
+                cout << left << setw(8) << reservation->getUserID()
+                     << setw(20) << reservation->getUser()->getFullName().substr(0, 19)
+                     << setw(8) << reservation->getResourceID()
+                     << setw(25) << reservation->getResourceName().substr(0, 24)
+                     << setw(10) << (reservation->getStatus() == "pending" ? 
+                                    "Pos " + to_string(reservation->getQueuePosition()) : 
+                                    reservation->getStatus())
+                     << setw(12) << reservation->getStatus() << "\n";
+            }
+        }
+        pause();
+        
+    } else if (choice == 2) {
+        // View reservations for specific book
+        clearScreen();
+        int bookId;
+        cout << "Enter Book ID: ";
+        cin >> bookId;
+        cin.ignore();
+        
+        Resource* res = globalSystem->getResourceByID(bookId);
+        if (!res) {
+            cout << "\n[ERROR] Book not found.\n";
+        } else {
+            bool found = false;
+            cout << "\n========== RESERVATIONS FOR: " << res->getTitle() << " ==========\n\n";
+            cout << left << setw(20) << "User Name"
+                 << setw(10) << "Position"
+                 << setw(15) << "Reserved Date"
+                 << setw(12) << "Status\n";
+            cout << string(57, '-') << "\n";
+            
+            for (auto& reservation : globalSystem->reservations) {
+                if (reservation->getResourceID() == bookId) {
+                    found = true;
+                    cout << left << setw(20) << reservation->getUser()->getFullName().substr(0, 19)
+                         << setw(10) << (reservation->getStatus() == "pending" ?
+                                        "Pos " + to_string(reservation->getQueuePosition()) :
+                                        reservation->getStatus())
+                         << setw(15) << reservation->getReservationDate()
+                         << setw(12) << reservation->getStatus() << "\n";
+                }
+            }
+            
+            if (!found) {
+                cout << "No reservations for this book.\n";
+            }
+        }
+        pause();
+        
+    } else if (choice == 3) {
+        // Cancel reservation as admin
+        clearScreen();
+        int userId, bookId;
+        cout << "Enter User ID: ";
+        cin >> userId;
+        cout << "Enter Book ID: ";
+        cin >> bookId;
+        cin.ignore();
+        
+        User* user = nullptr;
+        for (auto& u : globalSystem->users) {
+            if (u && u->getID() == userId) {
+                user = u;
+                break;
+            }
+        }
+        
+        Resource* res = globalSystem->getResourceByID(bookId);
+        
+        if (!user || !res) {
+            cout << "\n[ERROR] User or Book not found.\n";
+        } else {
+            bool found = false;
+            for (auto& reservation : globalSystem->reservations) {
+                if (reservation->getUserID() == userId && 
+                    reservation->getResourceID() == bookId &&
+                    reservation->getStatus() == "pending") {
+                    found = true;
+                    reservation->setStatus("cancelled");
+                    
+                    // Recalculate queue positions
+                    int newPosition = 1;
+                    for (auto& res : globalSystem->reservations) {
+                        if (res->getResourceID() == bookId && res->getStatus() == "pending") {
+                            res->setQueuePosition(newPosition);
+                            newPosition++;
+                        }
+                    }
+                    
+                    globalSystem->saveData();
+                    cout << "\n✓ Reservation cancelled and queue updated.\n";
+                    break;
+                }
+            }
+            
+            if (!found) {
+                cout << "\n[ERROR] No pending reservation found for this user and book.\n";
+            }
+        }
+        pause();
+        
+    } else if (choice == 4) {
+        // Fulfill normally with daily limit check
+        clearScreen();
+        int bookId;
+        cout << "Enter Book ID to fulfill next reservation (with limit check): ";
+        cin >> bookId;
+        cin.ignore();
+        
+        Resource* res = globalSystem->getResourceByID(bookId);
+        if (!res) {
+            cout << "\n[ERROR] Book not found.\n";
+        } else {
+            // Get TODAY's date for limit check
+            time_t now = time(nullptr);
+            struct tm* timeinfo = localtime(&now);
+            char dateBuffer[20];
+            strftime(dateBuffer, sizeof(dateBuffer), "%Y-%m-%d", timeinfo);
+            string todayDate(dateBuffer);
+            
+            // Call the normal fulfillNextReservation which checks daily limit using TODAY's date
+            globalSystem->fulfillNextReservation(bookId, todayDate);
+            cout << "\n✓ Fulfillment processed with daily limit check.\n";
+        }
+        pause();
+    }
+}
+
 void adminLogout() {
     currentAdmin = nullptr;
     cout << "\nLogged out successfully.\n";
@@ -1505,18 +1926,21 @@ void userSession() {
             case 3: viewBooksByFavoriteCategories(); break;
             case 4: borrowBook(); break;
             case 5: returnBook(); break;
-            case 6: viewBorrowingHistory(); break;
-            case 7: viewProfile(); break;
-            case 8: updateProfile(); break;
-            case 9: viewMembershipDetails(); break;
-            case 10: changeMembershipTier(); break;
-            case 11: viewLoyaltySummary(); break;
-            case 12: redeemLoyaltyPoints(); break;
-            case 13: redeemFineFreePass(); break;
-            case 14: upgradeMembershipWithPoints(); break;
-            case 15: rechargeBalance(); break;
-            case 16: viewBookReviews(); break;
-            case 17: userLogout(); break;
+            case 6: reserveBook(); break;
+            case 7: viewMyReservations(); break;
+            case 8: viewReservationQueue(); break;
+            case 9: viewBorrowingHistory(); break;
+            case 10: viewProfile(); break;
+            case 11: updateProfile(); break;
+            case 12: viewMembershipDetails(); break;
+            case 13: changeMembershipTier(); break;
+            case 14: viewLoyaltySummary(); break;
+            case 15: redeemLoyaltyPoints(); break;
+            case 16: redeemFineFreePass(); break;
+            case 17: upgradeMembershipWithPoints(); break;
+            case 18: rechargeBalance(); break;
+            case 19: viewBookReviews(); break;
+            case 20: userLogout(); break;
             default: cout << "\n[ERROR] Invalid option.\n"; pause();
         }
     }
@@ -1549,7 +1973,8 @@ void adminSession() {
             case 9: addNewAdmin(); break;
             case 10: viewReports(); break;
             case 11: updateUserMembership(); break;
-            case 12: adminLogout(); break;
+            case 12: adminManageReservations(); break;
+            case 13: adminLogout(); break;
             default: cout << "\n[ERROR] Invalid option.\n"; pause();
         }
     }
