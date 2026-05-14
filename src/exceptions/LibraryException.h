@@ -12,6 +12,8 @@ protected:
 
 public:
     LibraryException(string msg) : message(msg) {}
+    virtual ~LibraryException() noexcept = default;
+    
     string getMessage() const
     {
         return message;

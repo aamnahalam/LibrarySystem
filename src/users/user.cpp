@@ -5,6 +5,10 @@
 #include "../Membership/NormalMembership.h"
 #include "../Membership/ExtraMembership.h"
 #include "../Membership/DeluxeMembership.h"
+#include "../exceptions/LibraryException.h"
+#include "../exceptions/BorrowLimitExceededException.h"
+#include "../exceptions/InsufficientBalanceException.h"
+#include "../exceptions/ResourceNotAvailableException.h"
 #include <iostream>
 #include <stdexcept>
 using namespace std;
@@ -51,24 +55,24 @@ bool User::getLockStatus() const
 }
 
 // Member functions
-bool User::borrowresources(Resource *r, string date)
+void User::borrowresources(Resource *r, string date)
 {
     // Check locked
     if (isLocked)
     {
-        return false;
+        throw BorrowLimitExceededException("Cannot borrow: Your account is locked due to outstanding fines or violations.");
     }
     if (accountbalance < 0)
     {
-        return false;
+        throw InsufficientBalanceException("Cannot borrow: Your account balance is negative. Please recharge your account.");
     }
     if (r == nullptr)
     {
-        return false;
+        throw LibraryException("Cannot borrow: Invalid resource provided.");
     }
     if (!r->getAvailability())
     {
-        return false;
+        throw ResourceNotAvailableException("Cannot borrow: This resource is currently not available.");
     }
 
     // Extract month from date (YYYY-MM-DD format)
@@ -95,7 +99,7 @@ bool User::borrowresources(Resource *r, string date)
     // Check if monthly limit exceeded
     if (borrowsThisMonth >= monthlyLimit)
     {
-        return false;
+        throw BorrowLimitExceededException("Cannot borrow: You have reached your monthly borrow limit of " + to_string(monthlyLimit) + " books for this month.");
     }
     
     // Daily borrow limit: 2 books per day for all memberships
@@ -103,7 +107,7 @@ bool User::borrowresources(Resource *r, string date)
     {
         if (borrowsToday >= 2)
         {
-            return false;
+            throw BorrowLimitExceededException("Cannot borrow: You have reached the daily limit of 2 books per day.");
         }
     }
     else
@@ -118,14 +122,14 @@ bool User::borrowresources(Resource *r, string date)
         int limit = membership->getMaxBorrowLimit();
         if ((int)borrowedResources.size() >= limit)
         {
-            return false;
+            throw BorrowLimitExceededException("Cannot borrow: You have reached your maximum borrow limit of " + to_string(limit) + " books.");
         }
     }
 
     int borrowDateInt = convertDate(date);
     if (borrowDateInt == 0)
     {
-        return false;
+        throw LibraryException("Cannot borrow: Invalid date format provided.");
     }
 
     borrowedResources.push_back(r);
@@ -151,11 +155,15 @@ bool User::borrowresources(Resource *r, string date)
     BorrowRecord record(this, r->getResourceID(), r->getTitle(), date, dueDateStr);
     borrowHistory.push_back(record);
     earnpoints(5);
-    return true;
 }
 
 double User::returnresources(Resource *r, string date)
 {
+    if (r == nullptr)
+    {
+        throw LibraryException("Cannot return: Invalid resource provided.");
+    }
+
     bool found = false;
     for (int i = 0; i < (int)borrowedResources.size(); i++)
     {
@@ -169,7 +177,7 @@ double User::returnresources(Resource *r, string date)
     }
     if (!found)
     {
-        return -1.0;
+        throw LibraryException("Cannot return: This resource was not borrowed by you.");
     }
 
     for (int i = 0; i < (int)borrowHistory.size(); i++)
@@ -179,7 +187,7 @@ double User::returnresources(Resource *r, string date)
             int returnDate = convertDate(date);
             if (returnDate == 0)
             {
-                return -1.0;
+                throw LibraryException("Cannot return: Invalid date format provided.");
             }
             int dueDate = convertDate(borrowHistory[i].getDueDate());
             borrowHistory[i].markAsReturned(date);
@@ -198,6 +206,11 @@ double User::returnresources(Resource *r, string date)
                     return 0.0;  // No fine charged
                 }
                 
+                if (fine > accountbalance)
+                {
+                    throw InsufficientBalanceException("Cannot complete return: Fine of Rs." + to_string((int)fine) + " exceeds your account balance.");
+                }
+                
                 accountbalance -= fine;
                 return fine;
             }
@@ -208,13 +221,13 @@ double User::returnresources(Resource *r, string date)
             }
         }
     }
-    return -1.0;
+    throw LibraryException("Cannot return: No active borrow record found for this resource.");
 }
 void User::rechargebalance(double amount)
 {
     if (amount <= 0)
     {
-        return;
+        throw LibraryException("Cannot recharge: Balance amount must be greater than zero.");
     }
     accountbalance += amount;
 }
@@ -261,7 +274,7 @@ string User::getMembershipChangeNotice(int tier) const
            "This change costs " + costText + ". Confirm before switching.";
 }
 
-bool User::changeMembershipTier(int tier, bool confirm)
+void User::changeMembershipTier(int tier, bool confirm)
 {
     double cost = 0.0;
     string tierName;
@@ -280,22 +293,22 @@ bool User::changeMembershipTier(int tier, bool confirm)
             tierName = "Deluxe";
             break;
         default:
-            return false;
+            throw LibraryException("Cannot change membership: Invalid tier. Must be 1 (Essential), 2 (Extra), or 3 (Deluxe).");
     }
 
     if (membership != nullptr && membership->getLevelName() == tierName)
     {
-        return false;
+        throw LibraryException("Cannot change membership: You already have the " + tierName + " membership.");
     }
 
     if (tier < getMembershipIndex(membership ? membership->getLevelName() : string("Essential")) && !confirm)
     {
-        return false;
+        throw LibraryException("Cannot downgrade membership: Downgrade requires confirmation.");
     }
 
     if (accountbalance < cost)
     {
-        return false;
+        throw InsufficientBalanceException("Cannot upgrade membership: Your account balance (Rs." + to_string((int)accountbalance) + ") is insufficient. Upgrade cost is Rs." + to_string((int)cost) + ".");
     }
 
     Membership* newMembership = nullptr;
@@ -318,7 +331,6 @@ bool User::changeMembershipTier(int tier, bool confirm)
     }
 
     setMembership(newMembership);
-    return true;
 }
 
 void User::showMembershipOptions() const
@@ -386,6 +398,22 @@ string User::getLastBorrowMonth() const
 int User::getBorrowsThisMonth() const
 {
     return borrowsThisMonth;
+}
+
+// Setters for borrow counter
+void User::setLastBorrowDate(string date)
+{
+    lastBorrowDate = date;
+}
+
+void User::setBorrowsToday(int count)
+{
+    borrowsToday = count;
+}
+
+void User::incrementBorrowsToday()
+{
+    borrowsToday++;
 }
 
 // Redeem loyalty points for discount on balance
@@ -608,4 +636,11 @@ void User::displayInfo()
     {
         membership->displayDetails();
     }
+}
+
+void User::viewMyReservations() const
+{
+    // This is a placeholder that will be called from main_cli.cpp
+    // Actual reservation viewing is handled through LibrarySystem
+    cout << "\n[INFO] View your reservations through the main menu option.\n";
 }
