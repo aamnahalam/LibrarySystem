@@ -1287,3 +1287,77 @@ bool LibrarySystem::collectReservedBook(int resourceID, string date)
         throw LibraryException("Unexpected error while collecting reserved book: " + string(e.what()));
     }
 }
+
+// Search & Filter methods
+vector<Resource*> LibrarySystem::searchBooksByTitle(const string& title) const {
+    vector<Resource*> results;
+    for (auto* resource : resources) {
+        if (resource != nullptr) {
+            string bookTitle = resource->getTitle();
+            // Convert to lowercase for case-insensitive search
+            transform(bookTitle.begin(), bookTitle.end(), bookTitle.begin(), ::tolower);
+            string searchTerm = title;
+            transform(searchTerm.begin(), searchTerm.end(), searchTerm.begin(), ::tolower);
+            
+            if (bookTitle.find(searchTerm) != string::npos) {
+                results.push_back(resource);
+            }
+        }
+    }
+    return results;
+}
+
+vector<Resource*> LibrarySystem::searchBooksByAuthor(const string& author) const {
+    vector<Resource*> results;
+    for (auto* resource : resources) {
+        if (resource != nullptr) {
+            string bookAuthor = resource->getAuthor();
+            transform(bookAuthor.begin(), bookAuthor.end(), bookAuthor.begin(), ::tolower);
+            string searchTerm = author;
+            transform(searchTerm.begin(), searchTerm.end(), searchTerm.begin(), ::tolower);
+            
+            if (bookAuthor.find(searchTerm) != string::npos) {
+                results.push_back(resource);
+            }
+        }
+    }
+    return results;
+}
+
+vector<Resource*> LibrarySystem::searchBooksByCategory(const string& category) const {
+    vector<Resource*> results;
+    for (auto* resource : resources) {
+        if (resource != nullptr) {
+            string bookCategory = resource->getCategory();
+            // Convert to lowercase for case-insensitive search
+            transform(bookCategory.begin(), bookCategory.end(), bookCategory.begin(), ::tolower);
+            string searchTerm = category;
+            transform(searchTerm.begin(), searchTerm.end(), searchTerm.begin(), ::tolower);
+            
+            if (bookCategory == searchTerm || bookCategory.find(searchTerm) != string::npos) {
+                results.push_back(resource);
+            }
+        }
+    }
+    return results;
+}
+
+vector<Resource*> LibrarySystem::getAvailableBooks() const {
+    vector<Resource*> results;
+    for (auto* resource : resources) {
+        if (resource != nullptr && resource->getAvailability()) {
+            results.push_back(resource);
+        }
+    }
+    return results;
+}
+
+vector<Resource*> LibrarySystem::getBorrowedBooks() const {
+    vector<Resource*> results;
+    for (auto* resource : resources) {
+        if (resource != nullptr && !resource->getAvailability()) {
+            results.push_back(resource);
+        }
+    }
+    return results;
+}

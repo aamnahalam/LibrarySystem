@@ -447,25 +447,26 @@ void displayUserMenu() {
          << " | Points: " << currentUser->getLoyaltyPoints() << "\n";
     cout << string(50, '=') << "\n\n";
     cout << "1. View Available Books\n";
-    cout << "2. View Book Details\n";
-    cout << "3. View Books in My Favorite Categories\n";
-    cout << "4. Borrow a Book\n";
-    cout << "5. Return a Book\n";
-    cout << "6. Reserve a Book\n";
-    cout << "7. View My Reservations\n";
-    cout << "8. View Reservation Queue\n";
-    cout << "9. View My Borrowing History\n";
-    cout << "10. View My Profile\n";
-    cout << "11. Update Profile\n";
-    cout << "12. View Membership Details\n";
-    cout << "13. Change Membership Tier\n";
-    cout << "14. View Loyalty Points Summary\n";
-    cout << "15. Redeem Loyalty Points for Discount\n";
-    cout << "16. Redeem Points for Fine Waiver\n";
-    cout << "17. Upgrade Membership with Loyalty Points\n";
-    cout << "18. Recharge Account Balance\n";
-    cout << "19. View Book Reviews\n";
-    cout << "20. Logout\n";
+    cout << "2. Search & Filter Books\n";
+    cout << "3. View Book Details\n";
+    cout << "4. View Books in My Favorite Categories\n";
+    cout << "5. Borrow a Book\n";
+    cout << "6. Return a Book\n";
+    cout << "7. Reserve a Book\n";
+    cout << "8. View My Reservations\n";
+    cout << "9. View Reservation Queue\n";
+    cout << "10. View My Borrowing History\n";
+    cout << "11. View My Profile\n";
+    cout << "12. Update Profile\n";
+    cout << "13. View Membership Details\n";
+    cout << "14. Change Membership Tier\n";
+    cout << "15. View Loyalty Points Summary\n";
+    cout << "16. Redeem Loyalty Points for Discount\n";
+    cout << "17. Redeem Points for Fine Waiver\n";
+    cout << "18. Upgrade Membership with Loyalty Points\n";
+    cout << "19. Recharge Account Balance\n";
+    cout << "20. View Book Reviews\n";
+    cout << "21. Logout\n";
     cout << "\n";
 }
 
@@ -496,6 +497,142 @@ void viewBooks() {
              << setw(12) << r->getCategory().substr(0, 11)
              << setw(10) << (r->getAvailability() ? "Available" : "Borrowed")
              << setw(8) << fixed << setprecision(1) << r->getRating() << "\n";
+    }
+    pause();
+}
+
+void searchAndFilterBooks() {
+    clearScreen();
+    cout << "========== SEARCH & FILTER BOOKS ==========\n\n";
+    cout << "1. Search by Title\n";
+    cout << "2. Search by Author\n";
+    cout << "3. Search by Category\n";
+    cout << "4. View Available Books\n";
+    cout << "5. View Borrowed Books\n";
+    cout << "0. Back\n\n";
+    
+    int choice = getValidIntInput(0, 5, "Select option: ");
+    
+    vector<Resource*> results;
+    
+    if (choice == 1) {
+        clearScreen();
+        string title;
+        cout << "Enter book title (partial match okay): ";
+        cin.ignore();
+        getline(cin, title);
+        results = globalSystem->searchBooksByTitle(title);
+    }
+    else if (choice == 2) {
+        clearScreen();
+        string author;
+        cout << "Enter author name (partial match okay): ";
+        cin.ignore();
+        getline(cin, author);
+        results = globalSystem->searchBooksByAuthor(author);
+    }
+    else if (choice == 3) {
+        clearScreen();
+        cout << "Available Categories: Fantasy, Romance, Dystopian, Fiction, SelfHelp, History\n\n";
+        string category;
+        cout << "Enter category: ";
+        cin.ignore();
+        getline(cin, category);
+        results = globalSystem->searchBooksByCategory(category);
+    }
+    else if (choice == 4) {
+        results = globalSystem->getAvailableBooks();
+    }
+    else if (choice == 5) {
+        results = globalSystem->getBorrowedBooks();
+    }
+    else {
+        return;
+    }
+    
+    clearScreen();
+    cout << "============================================================\n";
+    cout << "                    SEARCH RESULTS\n";
+    cout << "============================================================\n\n";
+
+    if (results.empty()) {
+        cout << "No books found matching your search.\n\n";
+        pause();
+        return;
+    }
+
+    cout << left << setw(6) << "ID" << setw(25) << "Title" << setw(18) << "Author"
+         << setw(12) << "Category" << setw(10) << "Status" << setw(8) << "Rating\n";
+    cout << string(80, '-') << "\n";
+
+    bool anyAvailable = false;
+    for (auto* book : results) {
+        if (book != nullptr) {
+            cout << left << setw(6) << book->getResourceID()
+                 << setw(25) << book->getTitle().substr(0, 24)
+                 << setw(18) << book->getAuthor().substr(0, 17)
+                 << setw(12) << book->getCategory().substr(0, 11)
+                 << setw(10) << (book->getAvailability() ? "Available" : "Borrowed")
+                 << setw(8) << fixed << setprecision(1) << book->getRating() << "\n";
+            if (book->getAvailability()) anyAvailable = true;
+        }
+    }
+    cout << "\n";
+
+    if (!anyAvailable) {
+        cout << "No available books in these results to borrow.\n";
+        pause();
+        return;
+    }
+
+    cout << string(60, '-') << "\n";
+    cout << "Enter Book ID to borrow (0 to go back): ";
+    int borrowId;
+    cin >> borrowId;
+    cin.ignore(10000, '\n');
+
+    if (borrowId == 0) return;
+
+    Resource* selected = nullptr;
+    for (auto* book : results) {
+        if (book && book->getResourceID() == borrowId) {
+            selected = book;
+            break;
+        }
+    }
+
+    if (!selected) {
+        cout << "\n[ERROR] Book ID not found in search results.\n";
+        pause();
+        return;
+    }
+
+    if (!selected->getAvailability()) {
+        cout << "\n[ERROR] That book is currently borrowed. You can reserve it from the main menu.\n";
+        pause();
+        return;
+    }
+
+    try {
+        string borrowDate = getCurrentDate();
+        string dueDate = getDueDate(borrowDate);
+        currentUser->borrowresources(selected, borrowDate);
+        globalSystem->saveData();
+        cout << "\n[SUCCESS] Book borrowed successfully!\n";
+        cout << "Title: " << selected->getTitle() << "\n";
+        cout << "Author: " << selected->getAuthor() << "\n";
+        cout << "Borrow Date: " << borrowDate << "\n";
+        cout << "Due Date: " << dueDate << " (7 days)\n";
+    } catch (const BorrowLimitExceededException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const InsufficientBalanceException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const ResourceNotAvailableException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const LibraryException& e) {
+        cout << "\n[ERROR] " << e.getMessage() << "\n";
+    } catch (const exception& e) {
+        cout << "\n[ERROR] Borrow failed: " << e.what() << "\n";
     }
     pause();
 }
@@ -2037,29 +2174,30 @@ void userSession() {
         clearScreen();
         displayUserMenu();
         
-        int choice = getValidIntInput(1, 20, "Select option (1-20): ");
+        int choice = getValidIntInput(1, 21, "Select option (1-21): ");
         
         switch (choice) {
             case 1: viewBooks(); break;
-            case 2: viewBookDetails(); break;
-            case 3: viewBooksByFavoriteCategories(); break;
-            case 4: borrowBook(); break;
-            case 5: returnBook(); break;
-            case 6: reserveBook(); break;
-            case 7: viewMyReservations(); break;
-            case 8: viewReservationQueue(); break;
-            case 9: viewBorrowingHistory(); break;
-            case 10: viewProfile(); break;
-            case 11: updateProfile(); break;
-            case 12: viewMembershipDetails(); break;
-            case 13: changeMembershipTier(); break;
-            case 14: viewLoyaltySummary(); break;
-            case 15: redeemLoyaltyPoints(); break;
-            case 16: redeemFineFreePass(); break;
-            case 17: upgradeMembershipWithPoints(); break;
-            case 18: rechargeBalance(); break;
-            case 19: viewBookReviews(); break;
-            case 20: userLogout(); break;
+            case 2: searchAndFilterBooks(); break;
+            case 3: viewBookDetails(); break;
+            case 4: viewBooksByFavoriteCategories(); break;
+            case 5: borrowBook(); break;
+            case 6: returnBook(); break;
+            case 7: reserveBook(); break;
+            case 8: viewMyReservations(); break;
+            case 9: viewReservationQueue(); break;
+            case 10: viewBorrowingHistory(); break;
+            case 11: viewProfile(); break;
+            case 12: updateProfile(); break;
+            case 13: viewMembershipDetails(); break;
+            case 14: changeMembershipTier(); break;
+            case 15: viewLoyaltySummary(); break;
+            case 16: redeemLoyaltyPoints(); break;
+            case 17: redeemFineFreePass(); break;
+            case 18: upgradeMembershipWithPoints(); break;
+            case 19: rechargeBalance(); break;
+            case 20: viewBookReviews(); break;
+            case 21: userLogout(); break;
         }
     }
 }
