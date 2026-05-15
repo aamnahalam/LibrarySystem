@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <set>
@@ -796,7 +797,7 @@ void borrowBook() {
     }
     
     cout << "\n";
-    int bookId = getValidIntInput(5000, 9999, "Enter Book ID to borrow: ");
+    int bookId = getValidIntInput(1, 99999, "Enter Book ID to borrow: ");
     
     Resource* book = nullptr;
     for (auto& r : globalSystem->resources) {
@@ -879,7 +880,7 @@ void returnBook() {
     }
     
     cout << "\n";
-    int bookId = getValidIntInput(5000, 9999, "Enter Book ID to return: ");
+    int bookId = getValidIntInput(1, 99999, "Enter Book ID to return: ");
     
     Resource* book = nullptr;
     for (auto& r : globalSystem->resources) {
@@ -1372,7 +1373,7 @@ void viewMyReservations() {
             }
         } else if (option == 2) {
             // Collect ready book
-            int resourceID = getValidIntInput(5000, 9999, "Enter Book ID to collect (must show [READY]): ");
+            int resourceID = getValidIntInput(1, 99999, "Enter Book ID to collect (must show [READY]): ");
             
             // Find the ready reservation
             Reservation* readyRes = nullptr;
@@ -1881,6 +1882,228 @@ void addNewAdmin() {
     pause();
 }
 
+void exportLibraryReport() {
+    ofstream report("library_report.txt");
+    if (!report.is_open()) {
+        cout << "\n[ERROR] Could not create library_report.txt\n";
+        pause();
+        return;
+    }
+
+    string today = getCurrentDate();
+
+    // ---- Header ----
+    report << "============================================================\n";
+    report << "         LIBRARY MANAGEMENT SYSTEM - FULL REPORT\n";
+    report << "         Generated: " << today << "\n";
+    report << "============================================================\n\n";
+
+    // ---- Summary ----
+    int totalUsers   = (int)globalSystem->users.size();
+    int totalAdmins  = (int)globalSystem->admins.size();
+    int totalBooks   = (int)globalSystem->resources.size();
+    int availBooks = 0, borrowedBooks = 0;
+    for (auto& r : globalSystem->resources) {
+        if (r->getAvailability()) availBooks++; else borrowedBooks++;
+    }
+    int totalRes = (int)globalSystem->reservations.size();
+    int pendingRes = 0, fulfilledRes = 0;
+    for (auto& res : globalSystem->reservations) {
+        if (res->getStatus() == "pending")   pendingRes++;
+        if (res->getStatus() == "fulfilled") fulfilledRes++;
+    }
+
+    report << "--- SUMMARY ---\n";
+    report << left << setw(22) << "Total Users"        << ": " << totalUsers   << "\n";
+    report << left << setw(22) << "Total Admins"       << ": " << totalAdmins  << "\n";
+    report << left << setw(22) << "Total Books"        << ": " << totalBooks   << "\n";
+    report << left << setw(22) << "  Available"        << ": " << availBooks   << "\n";
+    report << left << setw(22) << "  Borrowed"         << ": " << borrowedBooks << "\n";
+    report << left << setw(22) << "Total Reservations" << ": " << totalRes
+           << " (pending: " << pendingRes << ", fulfilled: " << fulfilledRes << ")\n";
+    report << "\n";
+
+    // ---- All Users ----
+    report << "--- ALL USERS ---\n";
+    report << left << setw(6) << "ID" << setw(22) << "Name" << setw(32) << "Email"
+           << setw(14) << "Membership" << setw(11) << "Balance" << setw(8) << "Points"
+           << "Status\n";
+    report << string(95, '-') << "\n";
+    for (auto& u : globalSystem->users) {
+        if (!u) continue;
+        report << left << setw(6)  << u->getID()
+               << setw(22) << u->getFullName().substr(0, 21)
+               << setw(32) << u->getEmail().substr(0, 31)
+               << setw(14) << u->getMembershipName().substr(0, 13)
+               << "Rs." << setw(8) << fixed << setprecision(2) << u->getAccountBalance()
+               << setw(8) << u->getLoyaltyPoints()
+               << (u->getLockStatus() ? "LOCKED" : "Active") << "\n";
+    }
+    report << "\n";
+
+    // ---- All Admins ----
+    report << "--- ALL ADMINS ---\n";
+    report << left << setw(6) << "ID" << setw(22) << "Name" << setw(32) << "Email"
+           << "Access Level\n";
+    report << string(75, '-') << "\n";
+    for (auto& a : globalSystem->admins) {
+        if (!a) continue;
+        report << left << setw(6)  << a->getID()
+               << setw(22) << a->getFullName().substr(0, 21)
+               << setw(32) << a->getEmail().substr(0, 31)
+               << a->getAccessLevel() << "\n";
+    }
+    report << "\n";
+
+    // ---- All Books ----
+    report << "--- ALL BOOKS ---\n";
+    report << left << setw(7) << "ID" << setw(26) << "Title" << setw(20) << "Author"
+           << setw(13) << "Category" << setw(11) << "Status" << setw(8) << "Rating"
+           << "Borrows\n";
+    report << string(90, '-') << "\n";
+    for (auto& r : globalSystem->resources) {
+        if (!r) continue;
+        report << left << setw(7)  << r->getResourceID()
+               << setw(26) << r->getTitle().substr(0, 25)
+               << setw(20) << r->getAuthor().substr(0, 19)
+               << setw(13) << r->getCategory().substr(0, 12)
+               << setw(11) << (r->getAvailability() ? "Available" : "Borrowed")
+               << setw(8)  << fixed << setprecision(1) << r->getRating()
+               << r->getBorrowCount() << "\n";
+    }
+    report << "\n";
+
+    // ---- Active Borrows ----
+    report << "--- ACTIVE BORROWS (not yet returned) ---\n";
+    report << left << setw(20) << "User" << setw(26) << "Book Title"
+           << setw(13) << "Borrow Date" << setw(13) << "Due Date" << "Overdue?\n";
+    report << string(75, '-') << "\n";
+    bool anyActive = false;
+    for (auto& u : globalSystem->users) {
+        if (!u) continue;
+        for (const auto& rec : u->getBorrowHistory()) {
+            if (!rec.getReturnStatus()) {
+                anyActive = true;
+                report << left << setw(20) << u->getFullName().substr(0, 19)
+                       << setw(26) << rec.getResourceName().substr(0, 25)
+                       << setw(13) << rec.getBorrowDate()
+                       << setw(13) << rec.getDueDate()
+                       << (rec.isOverdue() ? "YES" : "No") << "\n";
+            }
+        }
+    }
+    if (!anyActive) report << "No active borrows.\n";
+    report << "\n";
+
+    // ---- Overdue Books ----
+    report << "--- OVERDUE BOOKS ---\n";
+    report << left << setw(20) << "User" << setw(26) << "Book Title"
+           << "Due Date\n";
+    report << string(60, '-') << "\n";
+    bool anyOverdue = false;
+    for (auto& u : globalSystem->users) {
+        if (!u) continue;
+        for (const auto& rec : u->getBorrowHistory()) {
+            if (!rec.getReturnStatus() && rec.isOverdue()) {
+                anyOverdue = true;
+                report << left << setw(20) << u->getFullName().substr(0, 19)
+                       << setw(26) << rec.getResourceName().substr(0, 25)
+                       << rec.getDueDate() << "\n";
+            }
+        }
+    }
+    if (!anyOverdue) report << "No overdue books.\n";
+    report << "\n";
+
+    // ---- Reservations ----
+    report << "--- RESERVATIONS ---\n";
+    report << left << setw(20) << "User" << setw(26) << "Book Title"
+           << setw(15) << "Reserved Date" << setw(10) << "Position" << "Status\n";
+    report << string(80, '-') << "\n";
+    if (globalSystem->reservations.empty()) {
+        report << "No reservations.\n";
+    } else {
+        for (auto& res : globalSystem->reservations) {
+            string pos = (res->getStatus() == "pending")
+                         ? to_string(res->getQueuePosition()) : "-";
+            report << left << setw(20) << res->getUser()->getFullName().substr(0, 19)
+                   << setw(26) << res->getResourceName().substr(0, 25)
+                   << setw(15) << res->getReservationDate()
+                   << setw(10) << pos
+                   << res->getStatus() << "\n";
+        }
+    }
+    report << "\n";
+
+    // ---- Fine Summary ----
+    report << "--- FINE SUMMARY ---\n\n";
+
+    // Part 1: Current outstanding fines (unreturned + overdue)
+    report << "  [Current Outstanding]\n";
+    report << "  " << left << setw(25) << "User" << "Outstanding Fine (Rs.)\n";
+    report << "  " << string(43, '-') << "\n";
+    double outstandingTotal = 0.0;
+    bool anyOutstanding = false;
+    for (auto& u : globalSystem->users) {
+        if (!u) continue;
+        double userTotal = 0.0;
+        double discountMult = 1.0 - u->getFineDiscount();
+        for (const auto& rec : u->getBorrowHistory()) {
+            if (!rec.getReturnStatus() && rec.isOverdue()) {
+                Resource* res = globalSystem->getResourceByID(rec.getResourceID());
+                if (res) userTotal += rec.calculateFine(res->getFineRate(), discountMult);
+            }
+        }
+        if (userTotal > 0.0) {
+            anyOutstanding = true;
+            report << "  " << left << setw(25) << u->getFullName().substr(0, 24)
+                   << "Rs." << fixed << setprecision(2) << userTotal << "\n";
+            outstandingTotal += userTotal;
+        }
+    }
+    if (!anyOutstanding) report << "  No outstanding fines.\n";
+    report << "  Sub-total: Rs." << fixed << setprecision(2) << outstandingTotal << "\n\n";
+
+    // Part 2: Historical charged fines (returned late)
+    report << "  [Historical Charged (returned late)]\n";
+    report << "  " << left << setw(25) << "User" << setw(27) << "Book"
+           << setw(13) << "Return Date" << "Fine (Rs.)\n";
+    report << "  " << string(70, '-') << "\n";
+    double historicalTotal = 0.0;
+    bool anyHistorical = false;
+    for (auto& u : globalSystem->users) {
+        if (!u) continue;
+        double discountMult = 1.0 - u->getFineDiscount();
+        for (const auto& rec : u->getBorrowHistory()) {
+            if (rec.getReturnStatus() && rec.getReturnDate() > rec.getDueDate()) {
+                Resource* res = globalSystem->getResourceByID(rec.getResourceID());
+                if (res) {
+                    double fine = rec.calculateFine(res->getFineRate(), discountMult, rec.getReturnDate());
+                    if (fine > 0.0) {
+                        anyHistorical = true;
+                        report << "  " << left << setw(25) << u->getFullName().substr(0, 24)
+                               << setw(27) << rec.getResourceName().substr(0, 26)
+                               << setw(13) << rec.getReturnDate()
+                               << "Rs." << fixed << setprecision(2) << fine << "\n";
+                        historicalTotal += fine;
+                    }
+                }
+            }
+        }
+    }
+    if (!anyHistorical) report << "  No historical late returns.\n";
+    report << "  (* Fine waiver may have been applied - actual charged amount may differ)\n";
+    report << "  Sub-total: Rs." << fixed << setprecision(2) << historicalTotal << "\n\n";
+
+    report << "  TOTAL (outstanding + historical): Rs."
+           << fixed << setprecision(2) << (outstandingTotal + historicalTotal) << "\n";
+    report << "\n============================================================\n";
+
+    report.close();
+    cout << "\n[SUCCESS] Full report saved to library_report.txt\n";
+    pause();
+}
+
 void viewReports() {
     clearScreen();
     cout << "---------- SYSTEM REPORTS ----------\n\n";
@@ -1888,15 +2111,13 @@ void viewReports() {
     cout << "2. Issued Resources Report\n";
     cout << "3. Overdue Resources Report\n";
     cout << "4. Fine Report\n";
-    cout << "5. Back to Admin Menu\n";
-    cout << "\nSelect report (1-5): ";
-    
-    int choice;
-    cin >> choice;
-    cin.ignore();
-    
+    cout << "5. Export Full Report to File\n";
+    cout << "6. Back to Admin Menu\n";
+
+    int choice = getValidIntInput(1, 6, "\nSelect report (1-6): ");
+
     clearScreen();
-    
+
     try {
         switch (choice) {
             case 1:
@@ -1916,6 +2137,9 @@ void viewReports() {
                 currentAdmin->generateFineReport(*globalSystem);
                 break;
             case 5:
+                exportLibraryReport();
+                return;
+            case 6:
                 return;
             default:
                 cout << "[ERROR] Invalid option.\n";
