@@ -49,6 +49,13 @@ public:
     bool borrowResource(int resourceID, string date);
     double returnResource(int resourceID, string date);
 
+    // Search & Filter operations
+    vector<Resource*> searchBooksByTitle(const string& title) const;
+    vector<Resource*> searchBooksByAuthor(const string& author) const;
+    vector<Resource*> searchBooksByCategory(const string& category) const;
+    vector<Resource*> getAvailableBooks() const;
+    vector<Resource*> getBorrowedBooks() const;
+
     // Reservation operations
     bool reserveBook(int resourceID, string date);
     bool cancelReservation(int resourceID);
