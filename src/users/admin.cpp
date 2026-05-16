@@ -124,36 +124,75 @@ void Admin::generateOverdueResourcesReport(LibrarySystem& system) {
 
 // FINE REPORT
 void Admin::generateFineReport(LibrarySystem& system) {
-    bool hasRecords = false;
+    // Section 1: Current outstanding fines (unreturned + overdue)
+    cout << "  [Current Outstanding Fines]\n";
+    cout << "  " << left << setw(25) << "User" << "Outstanding Fine (Rs.)\n";
+    cout << "  " << string(43, '-') << "\n";
+    double outstandingTotal = 0.0;
+    bool anyOutstanding = false;
     for (const auto user : system.users) {
-        if (!user) {
-            continue;
-        }
-        double totalFine = 0.0;
-
+        if (!user) continue;
+        double userTotal = 0.0;
+        double discountMult = 1.0 - user->getFineDiscount();
         for (const auto& record : user->getBorrowHistory()) {
             if (record.isOverdue()) {
-                double resourceFineRate = 1.0;
+                double fineRate = 1.0;
                 for (const auto& res : system.resources) {
                     if (res->getResourceID() == record.getResourceID()) {
-                        resourceFineRate = res->getFineRate();
+                        fineRate = res->getFineRate();
                         break;
                     }
                 }
-                double discountMultiplier = 1.0 - user->getFineDiscount();
-                totalFine += record.calculateFine(resourceFineRate, discountMultiplier);
+                userTotal += record.calculateFine(fineRate, discountMult);
             }
         }
-
-        if (totalFine > 0) {
-            hasRecords = true;
-            cout << "User: " << user->getFullName()
-                 << ", Total Fine: Rs." << fixed << setprecision(2) << totalFine << endl;
+        if (userTotal > 0.0) {
+            anyOutstanding = true;
+            cout << "  " << left << setw(25) << user->getFullName().substr(0, 24)
+                 << "Rs." << fixed << setprecision(2) << userTotal << "\n";
+            outstandingTotal += userTotal;
         }
     }
-    if (!hasRecords) {
-        cout << "No fines to report.\n";
+    if (!anyOutstanding) cout << "  No outstanding fines.\n";
+    cout << "  Sub-total: Rs." << fixed << setprecision(2) << outstandingTotal << "\n\n";
+
+    // Section 2: Historical charged fines (returned late)
+    cout << "  [Historical Charged Fines (returned late)]\n";
+    cout << "  " << left << setw(25) << "User" << setw(27) << "Book"
+         << setw(13) << "Return Date" << "Fine (Rs.)\n";
+    cout << "  " << string(70, '-') << "\n";
+    double historicalTotal = 0.0;
+    bool anyHistorical = false;
+    for (const auto user : system.users) {
+        if (!user) continue;
+        double discountMult = 1.0 - user->getFineDiscount();
+        for (const auto& record : user->getBorrowHistory()) {
+            if (record.getReturnStatus() && record.getReturnDate() > record.getDueDate()) {
+                double fineRate = 1.0;
+                for (const auto& res : system.resources) {
+                    if (res->getResourceID() == record.getResourceID()) {
+                        fineRate = res->getFineRate();
+                        break;
+                    }
+                }
+                double fine = record.calculateFine(fineRate, discountMult, record.getReturnDate());
+                if (fine > 0.0) {
+                    anyHistorical = true;
+                    cout << "  " << left << setw(25) << user->getFullName().substr(0, 24)
+                         << setw(27) << record.getResourceName().substr(0, 26)
+                         << setw(13) << record.getReturnDate()
+                         << "Rs." << fixed << setprecision(2) << fine << "\n";
+                    historicalTotal += fine;
+                }
+            }
+        }
     }
+    if (!anyHistorical) cout << "  No historical late returns.\n";
+    cout << "  (* Fine waiver may have been applied - actual charged amount may differ)\n";
+    cout << "  Sub-total: Rs." << fixed << setprecision(2) << historicalTotal << "\n\n";
+
+    cout << "  TOTAL (outstanding + historical): Rs."
+         << fixed << setprecision(2) << (outstandingTotal + historicalTotal) << "\n";
 }
 
 void Admin::assignMembershipTier(int userID, int tier, LibrarySystem& system) {
